@@ -1,4 +1,8 @@
 ﻿function Get-VstsAuthorization {
+<#
+    .SYNOPSIS
+        Generates a VSTS authorization header value from a username and Personal Access Token. 
+#>
     param($user, $token)
 
     $Value = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $user, $token)))
@@ -19,6 +23,10 @@ function Get-VstsWorkItem {
 }
 
 function New-VstsWorkItem {
+<#
+    .SYNOPSIS 
+        Create new work items in VSTS
+#>
     param($AccountName, $Project, $User, $Token, $PropertyHashtable, $WorkItemType)
 
     $authorization = Get-TfsAuthorization -User $user -Token $token
