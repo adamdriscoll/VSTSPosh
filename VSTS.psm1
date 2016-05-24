@@ -10,6 +10,10 @@
 }
 
 function Get-VstsProject {
+<#
+    .SYNOPSIS 
+        Get projects in a VSTS account.
+#>
     param($AccountName, $User, $Token)
     
     $authorization = Get-VstsAuthorization -User $user -Token $token
@@ -22,13 +26,12 @@ function Get-VstsWorkItem {
     .SYNOPSIS 
         Get work items from VSTS
 #>
-    param($AccountName, $User, $Token)
+    param($AccountName, $User, $Token, [Parameter(Mandatory)]$Id)
 
     $authorization = Get-VstsAuthorization -User $user -Token $token
 
-    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/wit/workitems?api-version=1.0" -Method GET -ContentType 'application/json' -Headers @{Authorization=$authorization} 
+    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/wit/workitems?api-version=1.0&ids=$Id" -Method GET -ContentType 'application/json' -Headers @{Authorization=$authorization} 
 }
-
 
 function New-VstsWorkItem {
 <#
@@ -39,7 +42,7 @@ function New-VstsWorkItem {
 
     $authorization = Get-VstsAuthorization -User $user -Token $token
 
-    $Fields = foreach($kvp in $PropertyHashtable)
+    $Fields = foreach($kvp in $PropertyHashtable.GetEnumerator())
     {
         [PSCustomObject]@{
             op = 'add'
@@ -50,6 +53,6 @@ function New-VstsWorkItem {
 
     $Body = $Fields | ConvertTo-Json
     "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/wit/workitems/$($WorkItemType)?api-version=1.0"
-    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/wit/workitems/$($WorkItemType)?api-version=1.0" -Method POST -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
+    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/wit/workitems/`$$($WorkItemType)?api-version=1.0" -Method PATCH -ContentType 'application/json-patch+json' -Headers @{Authorization=$authorization} -Body $Body
 }
 
