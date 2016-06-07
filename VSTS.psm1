@@ -1,4 +1,48 @@
-﻿function Get-VstsAuthorization {
+﻿function Invoke-VstsEndpoint {
+    param([Parameter(Mandatory=$true)]$AccountName, 
+          [Parameter(Mandatory=$true)]$User, 
+          [Parameter(Mandatory=$true)]$Token, 
+          [Hashtable]$QueryStringParameters, 
+          $Project,
+          [Uri]$Path, 
+          [Version]$ApiVersion='1.0', 
+          [ValidateSet('Get', 'PUT', 'POST', 'DELETE')]$Method='GET')
+
+    $queryString = [System.Web.HttpUtility]::ParseQueryString([string]::Empty)
+   
+    if ($QueryStringParameters -ne $null)
+    {
+        foreach($parameter in $QueryStringParameters.GetEnumerator())
+        {
+            $queryString[$parameter.Key] = $parameter.Value
+        }
+    }
+
+    $queryString["api-version"] = $ApiVersion.ToString()
+    $queryString = $queryString.ToString();
+
+    $authorization = Get-VstsAuthorization -User $user -Token $token
+
+    $UriBuilder = New-Object System.UriBuilder -ArgumentList "https://$AccountName.visualstudio.com"
+    $UriBuilder.Query = $queryString
+    if ([String]::IsNullOrEmpty($Project))
+    {
+        $UriBuilder.Path = "DefaultCollection/_apis/$Path"
+    }
+    else 
+    {
+        $UriBuilder.Path = "DefaultCollection/$Project/_apis/$Path"
+    }
+
+  
+    $Uri = $UriBuilder.Uri
+
+    Write-Verbose "Invoke URI [$uri]"
+
+    Invoke-RestMethod $Uri -Method $Method -ContentType 'application/json' -Headers @{Authorization=$authorization} 
+}
+
+function Get-VstsAuthorization {
 <#
     .SYNOPSIS
         Generates a VSTS authorization header value from a username and Personal Access Token. 
@@ -67,13 +111,13 @@ function Get-VstsWorkItemQuery {
           [Parameter(Mandatory=$true)]$Project, 
           $FolderPath)
 
-    $authorization = Get-VstsAuthorization -User $user -Token $token
+    $Result = Invoke-VstsEndpoint -AccountName $AccountName -User $User -Token $Token -Project $Project -Path 'wit/queries' -QueryStringParameters @{depth=1}
 
-    $Result = Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/wit/queries?`$depth=1&api-version=1.0" -Method GET -ContentType 'application/json' -Headers @{Authorization=$authorization}
     foreach($value in $Result.Value)
     {
         if ($Value.isFolder -and $Value.hasChildren)
         {
+            Write-Verbose "$Value.Name"
             foreach($child in $value.Children)
             {
                 if (-not $child.isFolder)
