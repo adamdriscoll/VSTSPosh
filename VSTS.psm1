@@ -61,10 +61,27 @@ function Get-VstsWorkItemQuery {
     .SYNOPSIS 
         Returns a list of work item queries from the specified folder.
     #>
-    param($AccountName, $User, $Token, $Project, $FolderPath)
+    param([Parameter(Mandatory=$true)]$AccountName, 
+          [Parameter(Mandatory=$true)]$User, 
+          [Parameter(Mandatory=$true)]$Token, 
+          [Parameter(Mandatory=$true)]$Project, 
+          $FolderPath)
 
     $authorization = Get-VstsAuthorization -User $user -Token $token
 
-    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/wit/queries?`$depth=1&api-version=1.0" -Method GET -ContentType 'application/json' -Headers @{Authorization=$authorization} 
+    $Result = Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/wit/queries?`$depth=1&api-version=1.0" -Method GET -ContentType 'application/json' -Headers @{Authorization=$authorization}
+    foreach($value in $Result.Value)
+    {
+        if ($Value.isFolder -and $Value.hasChildren)
+        {
+            foreach($child in $value.Children)
+            {
+                if (-not $child.isFolder)
+                {
+                    $child
+                }
+            }
+        }
+    } 
 }
 
