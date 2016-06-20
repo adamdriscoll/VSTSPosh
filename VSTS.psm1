@@ -62,7 +62,9 @@ function Get-VstsProject {
     
     $authorization = Get-VstsAuthorization -User $user -Token $token
 
-    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects?api-version=1.0" -Method GET -ContentType 'application/json' -Headers @{Authorization=$authorization} 
+    $Value  = Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects?api-version=1.0" -Method GET -ContentType 'application/json' -Headers @{Authorization=$authorization}
+
+    $Value.Value 
 }
 
 function Get-VstsWorkItem {
@@ -96,7 +98,7 @@ function New-VstsWorkItem {
     }
 
     $Body = $Fields | ConvertTo-Json
-    "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/wit/workitems/$($WorkItemType)?api-version=1.0"
+    
     Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/wit/workitems/`$$($WorkItemType)?api-version=1.0" -Method PATCH -ContentType 'application/json-patch+json' -Headers @{Authorization=$authorization} -Body $Body
 }
 
@@ -127,5 +129,42 @@ function Get-VstsWorkItemQuery {
             }
         }
     } 
+}
+
+function New-VstsGitRepository {
+    <#
+        .SYNOPSIS
+            Creates a new Git repository in the specified team project. 
+    #>
+    param([Parameter(Mandatory=$true)]$AccountName, 
+          [Parameter(Mandatory=$true)]$User, 
+          [Parameter(Mandatory=$true)]$Token, 
+          [Parameter(Mandatory=$true)]$ProjectId,
+          [Parameter(Mandatory=$true)]$RepositoryName)  
+
+    $authorization = Get-VstsAuthorization -User $user -Token $token
+
+    $Body = @{
+        Name = $RepositoryName
+        Project = @{
+            Id = $ProjectId
+        }
+    } | ConvertTo-Json
+
+    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/git/repositories/?api-version=1.0" -Method POST -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
+}
+
+function Get-VstsGitRepository {
+    <#
+        .SYNOPSIS
+            Gets Git repositories in the specified team project. 
+    #>
+        param([Parameter(Mandatory=$true)]$AccountName, 
+              [Parameter(Mandatory=$true)]$User, 
+              [Parameter(Mandatory=$true)]$Token, 
+              [Parameter(Mandatory=$true)]$Project)
+
+     $Result = Invoke-VstsEndpoint -AccountName $AccountName -User $User -Token $Token -Project $Project -Path 'git/repositories' -QueryStringParameters @{depth=1}
+     $Result.Value              
 }
 
