@@ -5,7 +5,7 @@
           [Hashtable]$QueryStringParameters, 
           $Project,
           [Uri]$Path, 
-          [Version]$ApiVersion='1.0', 
+          $ApiVersion='1.0', 
           [ValidateSet('Get', 'PUT', 'POST', 'DELETE')]$Method='GET')
 
     $queryString = [System.Web.HttpUtility]::ParseQueryString([string]::Empty)
@@ -18,7 +18,7 @@
         }
     }
 
-    $queryString["api-version"] = $ApiVersion.ToString()
+    $queryString["api-version"] = $ApiVersion
     $queryString = $queryString.ToString();
 
     $authorization = Get-VstsAuthorization -User $user -Token $token
@@ -168,3 +168,64 @@ function Get-VstsGitRepository {
      $Result.Value              
 }
 
+function Get-VstsCodePolicy {
+    <#
+        .SYNOPSIS
+            Get code policies for the specified project. 
+    #>
+
+    param([Parameter(Mandatory=$true)]$AccountName, 
+              [Parameter(Mandatory=$true)]$User, 
+              [Parameter(Mandatory=$true)]$Token, 
+              [Parameter(Mandatory=$true)]$Project)
+
+     $Result = Invoke-VstsEndpoint -AccountName $AccountName -User $User -Token $Token -Project $Project -Path 'policy/configurations' -ApiVersion '2.0-preview.1'
+     $Result.Value     
+}
+
+function New-VstsCodePolicy {
+    <#
+        .SYNOPSIS
+            Creates a new Code Policy configuration for the specified project.
+    #>
+
+    param([Parameter(Mandatory=$true)]$AccountName, 
+                  [Parameter(Mandatory=$true)]$User, 
+                  [Parameter(Mandatory=$true)]$Token, 
+                  [Parameter(Mandatory=$true)]$Project,
+                  [Guid]$RepositoryId = [Guid]::Empty,
+                  [int]$MinimumReviewers,
+                  [string[]]$Branches)
+
+    $RepoId = $null
+    if ($RepositoryId -ne [Guid]::Empty)
+    {
+        $RepoId = $RepositoryId.ToString()   
+    }
+
+    $scopes = foreach($branch in $Branches)
+    {
+        @{
+            repositoryId = $RepoId
+            refName = "refs/heads/$branch"
+            matchKind = "exact"
+        }
+    }
+
+    $Policy = @{
+        isEnabled = $true
+        isBlocking = $false
+        type = @{
+            id = 'fa4e907d-c16b-4a4c-9dfa-4906e5d171dd'
+        }
+        settings = @{
+            minimumApproverCount = $MinimumReviewers
+            creatorVoteCounts = $false
+            scope = @($scopes)
+        }
+    } | ConvertTo-Json -Depth 10
+
+    $authorization = Get-VstsAuthorization -User $user -Token $token
+
+    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/policy/configurations/?api-version=2.0-preview.1" -Method POST -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Policy
+}
