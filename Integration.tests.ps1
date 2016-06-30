@@ -1,4 +1,4 @@
-﻿Describe "New-VSTSProject" {
+﻿Describe "New-VSTSProject" -Tags Integration {
 	$userName = $env:VSTSPoshUserName
 	$token = $env:VSTSPoshToken
 	$account = $env:VSTSPoshAccount 
