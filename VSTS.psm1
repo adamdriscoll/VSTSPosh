@@ -67,6 +67,39 @@ function Get-VstsProject {
     $Value.Value 
 }
 
+function New-VstsProject 
+{
+	<#
+		.SYNOPSIS
+			Creates a new project in a VSTS account
+	#>
+	param(
+	[Parameter(Mandatory)]$AccountName, 
+	[Parameter(Mandatory)]$User, 
+	[Parameter(Mandatory)]$Token, 
+	[Parameter(Mandatory)]$Name, 
+	[Parameter()]$Description, 
+	[Parameter()][ValidateSet('Git')]$SourceControlType = 'Git',
+	[Parameter()]$TemplateTypeId = '6b724908-ef14-45cf-84f8-768b5384da45')
+
+    $authorization = Get-VstsAuthorization -User $user -Token $token
+
+	$Body = @{
+		name = $Name
+		description = $Description
+		capabilities = @{
+			versioncontrol = @{
+				sourceControlType = $SourceControlType
+			}
+			processTemplate = @{
+				templateTypeId = $TemplateTypeId
+			}
+		}
+	} | ConvertTo-Json
+
+    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects?api-version=2.0-preview" -Method POST -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
+}
+
 function Get-VstsWorkItem {
 <#
     .SYNOPSIS 
@@ -178,7 +211,7 @@ function Get-VstsCodePolicy {
               [Parameter(Mandatory=$true)]$User, 
               [Parameter(Mandatory=$true)]$Token, 
               [Parameter(Mandatory=$true)]$Project)
-
+			  
      $Result = Invoke-VstsEndpoint -AccountName $AccountName -User $User -Token $Token -Project $Project -Path 'policy/configurations' -ApiVersion '2.0-preview.1'
      $Result.Value     
 }

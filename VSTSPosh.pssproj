@@ -27,6 +27,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Integration.tests.ps1" />
     <Compile Include="LICENSE" />
     <Compile Include="README.md" />
     <Compile Include="VSTS.psm1" />
