@@ -13,8 +13,7 @@ test_script:
 - ps: .\InvokeTests.ps1
 
 deploy_script:
-- ps: Install-PackageProvider -Name NuGet -Force 
-- ps: if ($env:APPVEYOR_REPO_BRANCH -eq 'master'-and $env:APPVEYOR_PULL_REQUEST_NUMBER -eq $null) { Publish-Module -NuGetApiKey $env:ApiKey -Path C:\VSTS -Confirm:$False } 
+- ps: .\PublishModule.ps1
 
 environment:
   ApiKey:
