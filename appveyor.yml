@@ -15,8 +15,8 @@ test_script:
   - ps: if ($res.FailedCount -gt 0) { throw "$($res.FailedCount) tests failed."}
   
 deploy_script:
-- ps: #Install-PackageProvider -Name NuGet -Force 
-- ps: #Publish-Module -NuGetApiKey $env:ApiKey -Path C:\VSTS
+- ps: Install-PackageProvider -Name NuGet -Force 
+- ps: if ($env:APPVEYOR_REPO_BRANCH -eq 'main') { Publish-Module -NuGetApiKey $env:ApiKey -Path C:\VSTS } 
 
 environment:
   ApiKey:
