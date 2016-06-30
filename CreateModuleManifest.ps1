@@ -10,4 +10,16 @@ $FunctionsToExport = @(
 'New-VstsGitRepository',
 'Get-VstsGitRepository')
 
-New-ModuleManifest -ModuleVersion $ENV:APPVEYOR_BUILD_VERSION -Path .\VSTS.psd1 -Author 'Adam Driscoll' -Company 'Concurrency, Inc' -Description 'Visual Studio Team Services PowerShell Integration' -RootModule '.\VSTS.psm1'  -FunctionsToExport $FunctionsToExport
+$NewModuleManifestParams = @{
+	ModuleVersion = $ENV:APPVEYOR_BUILD_VERSION
+	Path = .\VSTS.psd1
+	Author = 'Adam Driscoll'
+	Company = 'Concurrency, Inc'
+	Description = 'Visual Studio Team Services PowerShell Integration'
+	RootModule = '.\VSTS.psm1'
+	FunctionsToExport = $FunctionsToExport
+	ProjectUri = 'https://github.com/adamdriscoll/vstsposh'
+	Tags = @('VSTS')
+}
+
+New-ModuleManifest @NewModuleManifestParams
