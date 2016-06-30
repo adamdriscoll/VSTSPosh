@@ -29,8 +29,10 @@
   <ItemGroup>
     <Compile Include="LICENSE" />
     <Compile Include="README.md" />
-    <Compile Include="VSTS.psd1" />
     <Compile Include="VSTS.psm1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="appveyor.yml" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="Build" />
