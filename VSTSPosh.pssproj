@@ -27,6 +27,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CreateModuleManifest.ps1" />
     <Compile Include="Integration.tests.ps1" />
     <Compile Include="InvokeTests.ps1" />
     <Compile Include="LICENSE" />
