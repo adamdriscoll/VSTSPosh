@@ -97,7 +97,30 @@ function New-VstsProject
 		}
 	} | ConvertTo-Json
 
-    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects?api-version=2.0-preview" -Method POST -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
+    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects?api-version=1.0" -Method POST -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
+}
+
+function Remove-VSTSProject {
+	<#
+		.SYNOPSIS 
+			Deletes a project from the specified VSTS account.
+	#>
+	param(
+		[Parameter(Mandatory)]$AccountName, 
+		[Parameter(Mandatory)]$User, 
+		[Parameter(Mandatory)]$Token, 
+		[Parameter(Mandatory)]$Name)
+
+		$Id = Get-VstsProject -AccountName $AccountName -User $User -Token $Token | Where Name -EQ $Name | Select -ExpandProperty Id
+
+		if ($Id -eq $null)
+		{
+			throw "Project $Name not found in $AccountName."
+		}
+		
+		$authorization = Get-VstsAuthorization -User $user -Token $token
+
+		Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects/$($Id)?api-version=1.0" -Method DELETE -Headers @{Authorization=$authorization}
 }
 
 function Get-VstsWorkItem {
