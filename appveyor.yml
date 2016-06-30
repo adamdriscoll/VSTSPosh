@@ -7,7 +7,7 @@ install:
 
 version: 1.0.{build}
 build_script:
-- ps: New-ModuleManifest -ModuleVersion $ENV:APPVEYOR_BUILD_VERSION -Path .\VSTS.psd1 -Author 'Adam Driscoll' -Company 'Concurrency, Inc' -Description 'Visual Studio Team Services PowerShell Integration' -RootModule '.\VSTS.psm1' 
+- ps: .\CreateModuleManifest.ps1
 
 test_script:
 - ps: .\InvokeTests.ps1
