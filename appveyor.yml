@@ -14,7 +14,6 @@ test_script:
 
 deploy_script:
 - ps: Install-PackageProvider -Name NuGet -Force 
-- ps: $env:APPVEYOR_REPO_BRANCH
 - ps: if ($env:APPVEYOR_REPO_BRANCH -eq 'master') { Publish-Module -NuGetApiKey $env:ApiKey -Path C:\VSTS } 
 
 environment:
