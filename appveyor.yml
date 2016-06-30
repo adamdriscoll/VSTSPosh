@@ -10,21 +10,8 @@ build_script:
 - ps: New-ModuleManifest -ModuleVersion $ENV:APPVEYOR_BUILD_VERSION -Path .\VSTS.psd1 -Author 'Adam Driscoll' -Company 'Concurrency, Inc' -Description 'Visual Studio Team Services PowerShell Integration' -RootModule '.\VSTS.psm1' 
 
 test_script:
-   - ps: >-
-       if ($env:APPVEYOR_REPO_BRANCH -eq "master" -and $env:APPVEYOR_PULL_REQUEST_NUMBER -eq $null)
-       {
-           $res = Invoke-Pester -Path ".\" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru -Tag Integration
-           (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\TestsResults.xml))
-           if ($res.FailedCount -gt 0) { 
-              throw "$($res.FailedCount) integration tests failed."
-           }
-        }
-
-	    $res = Invoke-Pester -Path ".\" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru -Tag Unit
-        (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\TestsResults.xml))
-        if ($res.FailedCount -gt 0) { 
-	      throw "$($res.FailedCount) unit tests failed."
-	    }
+   - ps: .\InvokeTests.ps1
+       
 	   
 deploy_script:
 - ps: Install-PackageProvider -Name NuGet -Force 
