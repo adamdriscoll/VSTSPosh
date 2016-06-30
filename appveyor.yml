@@ -10,9 +10,8 @@ build_script:
 - ps: New-ModuleManifest -ModuleVersion $ENV:APPVEYOR_BUILD_VERSION -Path .\VSTS.psd1 -Author 'Adam Driscoll' -Company 'Concurrency, Inc' -Description 'Visual Studio Team Services PowerShell Integration' -RootModule '.\VSTS.psm1' 
 
 test_script:
-   - ps: .\InvokeTests.ps1
-       
-	   
+- ps: .\InvokeTests.ps1
+
 deploy_script:
 - ps: Install-PackageProvider -Name NuGet -Force 
 - ps: $env:APPVEYOR_REPO_BRANCH
