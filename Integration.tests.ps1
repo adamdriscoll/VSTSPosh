@@ -1,10 +1,9 @@
-﻿Describe "New-VSTSProject" -Tags Integration {
-	$userName = $env:VSTSPoshUserName
-	$token = $env:VSTSPoshToken
-	$account = $env:VSTSPoshAccount 
+﻿$userName = $env:VSTSPoshUserName
+$token = $env:VSTSPoshToken
+$account = $env:VSTSPoshAccount 
+Import-Module (Join-Path $PSScriptRoot 'VSTS.psm1') -Force
 
-	Import-Module (Join-Path $PSScriptRoot 'VSTS.psm1') -Force
-
+Describe "New-VSTSProject" -Tags Integration {
 	Context "Project doesn't exist" {
 		It "Creates new project" {
 			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject'
@@ -27,4 +26,16 @@
 	}
 
 	Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject'
+}
+
+Describe "Get-VstsBuildQueue" -Tags Integration {
+	Context "Default queues exist" {
+		It "returns default queues" {
+			$DefaultQueue = Get-VstsBuildQueue -AccountName $Account -User $userName -Token $token | Where name -EQ 'Default' 
+			$HostedQueue = Get-VstsBuildQueue -AccountName $Account -User $userName -Token $token | Where name -EQ 'Hosted' 
+
+			$DefaultQueue | Should not be $null
+			$HostedQueue | Should not be $null
+		}
+	}
 }

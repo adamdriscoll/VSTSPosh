@@ -24,3 +24,6 @@ https://www.visualstudio.com/en-us/integrate/api/overview
 	- Git
 		- New-VstsGitRepository
 		- Get-VstsGitRepository
+- Build
+	- Get-VstsBuildQueue
+	- Get-VstsBuildDefinition
