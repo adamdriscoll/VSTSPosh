@@ -18,10 +18,8 @@
 }
 
 function Invoke-VstsEndpoint {
-    param([Parameter(Mandatory=$true, ParameterSetName='Account')]$AccountName, 
-          [Parameter(Mandatory=$true, ParameterSetName='Account')]$User, 
-          [Parameter(Mandatory=$true, ParameterSetName='Account')]$Token, 
-		  [Parameter(Mandatory=$true, ParameterSetName='Session')]$Session, 
+    param(
+		  [Parameter(Mandatory=$true)]$Session, 
           [Hashtable]$QueryStringParameters, 
           [string]$Project,
           [Uri]$Path, 
@@ -42,26 +40,17 @@ function Invoke-VstsEndpoint {
     $queryString["api-version"] = $ApiVersion
     $queryString = $queryString.ToString();
 
-	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	$authorization = Get-VstsAuthorization -User $Session.User -Token $Session.Token
+	if ([String]::IsNullOrEmpty($Session.AccountName))
 	{
-		$authorization = Get-VstsAuthorization -User $user -Token $token
-		$UriBuilder = New-Object System.UriBuilder -ArgumentList "https://$AccountName.visualstudio.com"
-		$Collection = "DefaultCollection"
+		$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.Server)"
 	}
 	else
 	{
-		$authorization = Get-VstsAuthorization -User $Session.User -Token $Session.Token
-		if ([String]::IsNullOrEmpty($Session.AccountName))
-		{
-			$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.Server)"
-		}
-		else
-		{
-			$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.AccountName).visualstudio.com"
-		}
-		$Collection = $Session.Collection
+		$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.AccountName).visualstudio.com"
 	}
-
+	$Collection = $Session.Collection
+	
     $UriBuilder.Query = $queryString
     if ([String]::IsNullOrEmpty($Project))
     {
@@ -84,8 +73,6 @@ function Invoke-VstsEndpoint {
 	{
 		Invoke-RestMethod $Uri -Method $Method -ContentType 'application/json' -Headers @{Authorization=$authorization} 
 	}
-
-    
 }
 
 function Get-VstsAuthorization {
@@ -394,12 +381,24 @@ function Get-VstsCodePolicy {
             Get code policies for the specified project. 
     #>
 
-    param([Parameter(Mandatory=$true)]$AccountName, 
-              [Parameter(Mandatory=$true)]$User, 
-              [Parameter(Mandatory=$true)]$Token, 
-              [Parameter(Mandatory=$true)]$Project)
+    param(
+	    [Parameter(Mandatory, ParameterSetname='Account')]
+		$AccountName, 
+		[Parameter(Mandatory, ParameterSetname='Account')]
+		$User, 
+		[Parameter(Mandatory, ParameterSetname='Account')]
+		$Token, 
+		[Parameter(Mandatory, ParameterSetname='Session')]
+		$Session, 
+        [Parameter(Mandatory=$true)]$Project)
+
+		
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
 			  
-     $Result = Invoke-VstsEndpoint -AccountName $AccountName -User $User -Token $Token -Project $Project -Path 'policy/configurations' -ApiVersion '2.0-preview.1'
+     $Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'policy/configurations' -ApiVersion '2.0-preview.1'
      $Result.Value     
 }
 
@@ -409,13 +408,23 @@ function New-VstsCodePolicy {
             Creates a new Code Policy configuration for the specified project.
     #>
 
-    param([Parameter(Mandatory=$true)]$AccountName, 
-                  [Parameter(Mandatory=$true)]$User, 
-                  [Parameter(Mandatory=$true)]$Token, 
-                  [Parameter(Mandatory=$true)]$Project,
-                  [Guid]$RepositoryId = [Guid]::Empty,
-                  [int]$MinimumReviewers,
-                  [string[]]$Branches)
+    param(
+		[Parameter(Mandatory, ParameterSetname='Account')]
+		$AccountName, 
+		[Parameter(Mandatory, ParameterSetname='Account')]
+		$User, 
+		[Parameter(Mandatory, ParameterSetname='Account')]
+		$Token, 
+		[Parameter(Mandatory, ParameterSetname='Session')]
+		$Session, 
+        [Parameter(Mandatory=$true)]
+		$Project,
+        [Guid]
+		$RepositoryId = [Guid]::Empty,
+        [int]
+		$MinimumReviewers,
+        [string[]]
+		$Branches)
 
     $RepoId = $null
     if ($RepositoryId -ne [Guid]::Empty)
@@ -445,7 +454,10 @@ function New-VstsCodePolicy {
         }
     } | ConvertTo-Json -Depth 10
 
-    $authorization = Get-VstsAuthorization -User $user -Token $token
+    if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
 
-    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/policy/configurations/?api-version=2.0-preview.1" -Method POST -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Policy
+	Invoke-VstsEndpoint -Session $Session -Project $Project -ApiVersion '2.0-preview.1' -Body $Policy -Method POST
 }
