@@ -294,13 +294,24 @@ function Get-VstsWorkItemQuery {
     .SYNOPSIS 
         Returns a list of work item queries from the specified folder.
     #>
-    param([Parameter(Mandatory=$true)]$AccountName, 
-          [Parameter(Mandatory=$true)]$User, 
-          [Parameter(Mandatory=$true)]$Token, 
-          [Parameter(Mandatory=$true)]$Project, 
-          $FolderPath)
+    param(
+	[Parameter(Mandatory, ParameterSetname='Account')]
+	$AccountName, 
+	[Parameter(Mandatory, ParameterSetname='Account')]
+	$User, 
+	[Parameter(Mandatory, ParameterSetname='Account')]
+	$Token, 
+	[Parameter(Mandatory, ParameterSetname='Session')]
+	$Session, 
+    [Parameter(Mandatory=$true)]$Project, 
+    $FolderPath)
 
-    $Result = Invoke-VstsEndpoint -AccountName $AccountName -User $User -Token $Token -Project $Project -Path 'wit/queries' -QueryStringParameters @{depth=1}
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
+
+    $Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'wit/queries' -QueryStringParameters @{depth=1}
 
     foreach($value in $Result.Value)
     {
@@ -323,13 +334,24 @@ function New-VstsGitRepository {
         .SYNOPSIS
             Creates a new Git repository in the specified team project. 
     #>
-    param([Parameter(Mandatory=$true)]$AccountName, 
-          [Parameter(Mandatory=$true)]$User, 
-          [Parameter(Mandatory=$true)]$Token, 
-          [Parameter(Mandatory=$true)]$ProjectId,
-          [Parameter(Mandatory=$true)]$RepositoryName)  
+    param(
+	[Parameter(Mandatory, ParameterSetname='Account')]
+	$AccountName, 
+	[Parameter(Mandatory, ParameterSetname='Account')]
+	$User, 
+	[Parameter(Mandatory, ParameterSetname='Account')]
+	$Token, 
+	[Parameter(Mandatory, ParameterSetname='Session')]
+	$Session, 
+    [Parameter(Mandatory=$true)]
+	$ProjectId,
+    [Parameter(Mandatory=$true)]
+	$RepositoryName)  
 
-    $authorization = Get-VstsAuthorization -User $user -Token $token
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
 
     $Body = @{
         Name = $RepositoryName
@@ -338,7 +360,7 @@ function New-VstsGitRepository {
         }
     } | ConvertTo-Json
 
-    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/git/repositories/?api-version=1.0" -Method POST -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
+	Invoke-VstsEndpoint -Session $Session -Method POST -Path 'git/repositories' -Body $Body
 }
 
 function Get-VstsGitRepository {
@@ -346,12 +368,23 @@ function Get-VstsGitRepository {
         .SYNOPSIS
             Gets Git repositories in the specified team project. 
     #>
-        param([Parameter(Mandatory=$true)]$AccountName, 
-              [Parameter(Mandatory=$true)]$User, 
-              [Parameter(Mandatory=$true)]$Token, 
-              [Parameter(Mandatory=$true)]$Project)
+        param(
+		[Parameter(Mandatory, ParameterSetname='Account')]
+		$AccountName, 
+		[Parameter(Mandatory, ParameterSetname='Account')]
+		$User, 
+		[Parameter(Mandatory, ParameterSetname='Account')]
+		$Token, 
+		[Parameter(Mandatory, ParameterSetname='Session')]
+		$Session, 
+        [Parameter(Mandatory=$true)]$Project)
 
-     $Result = Invoke-VstsEndpoint -AccountName $AccountName -User $User -Token $Token -Project $Project -Path 'git/repositories' -QueryStringParameters @{depth=1}
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
+
+     $Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'git/repositories' -QueryStringParameters @{depth=1}
      $Result.Value              
 }
 
