@@ -58,13 +58,20 @@ function Get-VstsProject {
     .SYNOPSIS 
         Get projects in a VSTS account.
 #>
-    param($AccountName, $User, $Token)
+    param($AccountName, $User, $Token, $Name)
     
     $authorization = Get-VstsAuthorization -User $user -Token $token
 
     $Value  = Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects?api-version=1.0" -Method GET -ContentType 'application/json' -Headers @{Authorization=$authorization}
 
-    $Value.Value 
+	if ($PSBoundParameters.ContainsKey("Name"))
+	{
+		$Value.Value | Where Name -eq $Name
+	}
+	else
+	{
+		$Value.Value 
+	}
 }
 
 function New-VstsProject 

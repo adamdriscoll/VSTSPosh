@@ -1,4 +1,23 @@
-﻿Describe "New-VSTSProject" -Tags Integration {
+﻿function Wait-VSTSProject {
+	param($AccountName, $UserName, $Token, $Name, $Attempts = 3)
+
+	$Retries = 0
+	do {
+		#Takes a few seconds for the project to be created
+		Start-Sleep -Seconds 10
+
+		$TeamProject = Get-VSTSProject -AccountName $AccountName -User $userName -Token $token -Name $Name
+
+		$Retries++
+	} while ($TeamProject -eq $null -and $Retries -le 10)
+
+	if ($TeamProject -eq $null)
+	{
+		throw "Failed to create team project!" 
+	}
+}
+
+Describe "New-VSTSProject" -Tags Integration {
 	$userName = $env:VSTSPoshUserName
 	$token = $env:VSTSPoshToken
 	$account = $env:VSTSPoshAccount 
@@ -8,21 +27,25 @@
 	Context "Project doesn't exist" {
 		It "Creates new project" {
 			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject'
+			Wait-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' 
+		}
+	}
 
-			$Retries = 0
-			do {
-				#Takes a few seconds for the project to be created
-				Start-Sleep -Seconds 10
+	Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject'
+}
 
-				$TeamProject = Get-VSTSProject -AccountName $Account -User $userName -Token $token | Where name -EQ 'IntegrationTestProject' 
+Describe "Get-VSTSProject" -Tags "Integration" {
+	$userName = $env:VSTSPoshUserName
+	$token = $env:VSTSPoshToken
+	$account = $env:VSTSPoshAccount 
 
-				$Retries++
-			} while ($TeamProject -eq $null -and $Retries -le 10)
+	Import-Module (Join-Path $PSScriptRoot 'VSTS.psm1') -Force
 
-			if ($TeamProject -eq $null)
-			{
-				throw "Failed to create team project!" 
-			}
+	Context "Project exists" {
+		It "Gets project by name" {
+			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject'
+			Wait-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' 
+			Get-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' | Should not be $null
 		}
 	}
 
