@@ -65,13 +65,19 @@ function Invoke-VstsEndpoint {
 
     Write-Verbose "Invoke URI [$uri]"
 
+	$ContentType = 'application/json'
 	if ($Method -eq 'PUT' -or $Method -eq 'POST' -or $Method -eq 'PATCH')
 	{
-		Invoke-RestMethod $Uri -Method $Method -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
+		if ($Method -eq 'PATCH')
+		{
+			$ContentType = 'application/json-patch+json'
+		}
+
+		Invoke-RestMethod $Uri -Method $Method -ContentType $ContentType -Headers @{Authorization=$authorization} -Body $Body
 	}
 	else
 	{
-		Invoke-RestMethod $Uri -Method $Method -ContentType 'application/json' -Headers @{Authorization=$authorization} 
+		Invoke-RestMethod $Uri -Method $Method -ContentType $ContentType -Headers @{Authorization=$authorization} 
 	}
 }
 
@@ -118,13 +124,13 @@ function Get-VstsProject {
 function Wait-VSTSProject {
 	param([Parameter(Mandatory)]$Session, 
 	      [Parameter(Mandatory)]$Name, 
-		  $Attempts = 10, 
+		  $Attempts = 30, 
 		  [Switch]$Exists)
 
 	$Retries = 0
 	do {
 		#Takes a few seconds for the project to be created
-		Start-Sleep -Seconds 10
+		Start-Sleep -Seconds 2
 
 		$TeamProject = Get-VSTSProject -Session $Session -Name $Name
 
@@ -250,7 +256,7 @@ function New-VstsWorkItem {
 	[Parameter(Mandatory)]
 	$Project,
 	[Parameter()]
-	[Hahstable]
+	[Hashtable]
 	$PropertyHashtable, 
 	[Parameter(Mandatory)]
 	[string]
@@ -262,16 +268,23 @@ function New-VstsWorkItem {
 		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
 	}
 
-    $Fields = foreach($kvp in $PropertyHashtable.GetEnumerator())
-    {
-        [PSCustomObject]@{
-            op = 'add'
-            path = '/fields/' + $kvp.Key
-            value = $kvp.value
-        }
-    }
+	if ($PropertyHashtable -ne $null)
+	{
+	    $Fields = foreach($kvp in $PropertyHashtable.GetEnumerator())
+		{
+			[PSCustomObject]@{
+				op = 'add'
+				path = '/fields/' + $kvp.Key
+				value = $kvp.value
+			}
+		}
 
-    $Body = $Fields | ConvertTo-Json
+		$Body = $Fields | ConvertTo-Json
+	}
+	else
+	{
+		$Body = [String]::Empty
+	}
 
 	Invoke-VstsEndpoint -Session $Session -Path "wit/workitems/`$$($WorkItemType)" -Method PATCH -Project $Project -Body $Body
 }
