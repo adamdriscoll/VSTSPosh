@@ -1,21 +1,4 @@
-﻿function Wait-VSTSProject {
-	param($AccountName, $UserName, $Token, $Name, $Attempts = 3)
-
-	$Retries = 0
-	do {
-		#Takes a few seconds for the project to be created
-		Start-Sleep -Seconds 10
-
-		$TeamProject = Get-VSTSProject -AccountName $AccountName -User $userName -Token $token -Name $Name
-
-		$Retries++
-	} while ($TeamProject -eq $null -and $Retries -le 10)
-
-	if ($TeamProject -eq $null)
-	{
-		throw "Failed to create team project!" 
-	}
-}
+﻿
 
 Describe "New-VSTSProject" -Tags Integration {
 	$userName = $env:VSTSPoshUserName
@@ -26,12 +9,11 @@ Describe "New-VSTSProject" -Tags Integration {
 
 	Context "Project doesn't exist" {
 		It "Creates new project" {
-			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject'
-			Wait-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' 
+			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' -Wait
 		}
 	}
 
-	Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject'
+	Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' -Wait
 }
 
 Describe "Get-VSTSProject" -Tags "Integration" {
@@ -43,11 +25,10 @@ Describe "Get-VSTSProject" -Tags "Integration" {
 
 	Context "Project exists" {
 		It "Gets project by name" {
-			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject'
-			Wait-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' 
+			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' -Wait
 			Get-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' | Should not be $null
 		}
 	}
 
-	Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject'
+	Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' -Wait
 }

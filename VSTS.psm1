@@ -74,6 +74,25 @@ function Get-VstsProject {
 	}
 }
 
+function Wait-VSTSProject {
+	param($AccountName, $UserName, $Token, $Name, $Attempts = 10, [Switch]$Exists)
+
+	$Retries = 0
+	do {
+		#Takes a few seconds for the project to be created
+		Start-Sleep -Seconds 10
+
+		$TeamProject = Get-VSTSProject -AccountName $AccountName -User $userName -Token $token -Name $Name
+
+		$Retries++
+	} while ((($TeamProject -eq $null -and $Exists) -or ($TeamProject -ne $null -and -not $Exists)) -and $Retries -le $Attempts)
+
+	if ($TeamProject -eq $null)
+	{
+		throw "Failed to create team project!" 
+	}
+}
+
 function New-VstsProject 
 {
 	<#
@@ -87,7 +106,8 @@ function New-VstsProject
 	[Parameter(Mandatory)]$Name, 
 	[Parameter()]$Description, 
 	[Parameter()][ValidateSet('Git')]$SourceControlType = 'Git',
-	[Parameter()]$TemplateTypeId = '6b724908-ef14-45cf-84f8-768b5384da45')
+	[Parameter()]$TemplateTypeId = '6b724908-ef14-45cf-84f8-768b5384da45',
+	[Switch]$Wait)
 
     $authorization = Get-VstsAuthorization -User $user -Token $token
 
@@ -105,6 +125,11 @@ function New-VstsProject
 	} | ConvertTo-Json
 
     Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects?api-version=1.0" -Method POST -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
+	
+	if ($Wait)
+	{
+		Wait-VSTSProject -AccountName $AccountName -UserName $User -Token $Token -Name $Name -Exists
+	}
 }
 
 function Remove-VSTSProject {
@@ -116,7 +141,8 @@ function Remove-VSTSProject {
 		[Parameter(Mandatory)]$AccountName, 
 		[Parameter(Mandatory)]$User, 
 		[Parameter(Mandatory)]$Token, 
-		[Parameter(Mandatory)]$Name)
+		[Parameter(Mandatory)]$Name,
+		[Parameter()][Switch]$Wait)
 
 		$Id = Get-VstsProject -AccountName $AccountName -User $User -Token $Token | Where Name -EQ $Name | Select -ExpandProperty Id
 
@@ -128,6 +154,11 @@ function Remove-VSTSProject {
 		$authorization = Get-VstsAuthorization -User $user -Token $token
 
 		Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects/$($Id)?api-version=1.0" -Method DELETE -Headers @{Authorization=$authorization}
+
+		if ($Wait)
+		{
+			Wait-VSTSProject -AccountName $AccountName -UserName $User -Token $Token -Name $Name
+		}
 }
 
 function Get-VstsWorkItem {
