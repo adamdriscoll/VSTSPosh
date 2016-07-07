@@ -23,7 +23,6 @@ else
     Write-Verbose -Verbose "Skipping installation of PSScriptAnalyzer since it requires PSVersion 5.0 or greater. Used PSVersion: $($PSVersion)"
 }
 
-
 if ($env:APPVEYOR_PULL_REQUEST_NUMBER -eq $null)
 {
     $res = Invoke-Pester -Path ".\" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru -Tag Integration

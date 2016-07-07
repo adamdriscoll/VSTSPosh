@@ -1,5 +1,4 @@
 ﻿Describe "VSTS" -Tags Unit {
-#region ScriptAnalyzer
     Context 'PSScriptAnalyzer' {
         It "passes Invoke-ScriptAnalyzer" {
 
