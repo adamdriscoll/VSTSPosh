@@ -1,26 +1,33 @@
 ﻿$userName = $env:VSTSPoshUserName
 $token = $env:VSTSPoshToken
 $account = $env:VSTSPoshAccount 
-$ProjectName = [Guid]::NewGuid().ToString().Replace('-','')
+
+function New-ProjectName {
+	[Guid]::NewGuid().ToString().Replace('-','').Substring(10)
+}
 
 Import-Module (Join-Path $PSScriptRoot 'VSTS.psm1') -Force
 
 Describe "New-VSTSProject" -Tags Integration {
 	Context "Project doesn't exist" {
 		It "Creates new project" {
+			$ProjectName = New-ProjectName
 			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name $ProjectName -Wait
-			Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name $ProjectName -Wait
+			Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name $ProjectName
 		}
 
 		It "Creates new project with session" {
+			$ProjectName = New-ProjectName
 			$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
 			New-VSTSProject -Session $Session -Name $ProjectName -Wait
-			Remove-VSTSProject -Session $Session -Name $ProjectName -Wait
+			Remove-VSTSProject -Session $Session -Name $ProjectName
 		}
 	}
 }
 
 Describe "Get-VSTSProject" -Tags "Integration" {
+	$ProjectName = New-ProjectName
+
 	Context "Project exists" {
 		It "Gets project by name" {
 			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name $ProjectName -Wait
@@ -28,10 +35,11 @@ Describe "Get-VSTSProject" -Tags "Integration" {
 		}
 	}
 
-	Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name $ProjectName -Wait
+	Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name $ProjectName
 }
 
 Describe "New-VSTSGitRepository" -Tags "Integration" {
+	$ProjectName = New-ProjectName
 	$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
 	New-VSTSProject -Session $Session -Name $ProjectName -Wait
 
@@ -45,5 +53,5 @@ Describe "New-VSTSGitRepository" -Tags "Integration" {
 		}
 	}
 
-	Remove-VSTSProject -Session $Session -Name $ProjectName -Wait
+	Remove-VSTSProject -Session $Session -Name $ProjectName
 }
