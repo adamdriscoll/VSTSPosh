@@ -9,10 +9,6 @@ Describe "New-VSTSProject" -Tags Integration {
 		It "Creates new project" {
 			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' -Wait
 		}
-
-		It "Creates new project with session" {
-			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' -Wait
-		}
 	}
 
 	Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name 'IntegrationTestProject' -Wait

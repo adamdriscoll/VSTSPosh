@@ -26,7 +26,7 @@ function Invoke-VstsEndpoint {
           [string]$Project,
           [Uri]$Path, 
           [string]$ApiVersion='1.0', 
-          [ValidateSet('GET', 'PUT', 'POST', 'DELETE')]$Method='GET',
+          [ValidateSet('GET', 'PUT', 'POST', 'DELETE', 'PATCH')]$Method='GET',
 		  [string]$Body)
 
     $queryString = [System.Web.HttpUtility]::ParseQueryString([string]::Empty)
@@ -57,7 +57,7 @@ function Invoke-VstsEndpoint {
 		}
 		else
 		{
-			$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$AccountName.visualstudio.com"
+			$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.AccountName).visualstudio.com"
 		}
 		$Collection = $Session.Collection
 	}
@@ -76,7 +76,7 @@ function Invoke-VstsEndpoint {
 
     Write-Verbose "Invoke URI [$uri]"
 
-	if ($Method -eq 'PUT' -or $Method -eq 'POST')
+	if ($Method -eq 'PUT' -or $Method -eq 'POST' -or $Method -eq 'PATCH')
 	{
 		Invoke-RestMethod $Uri -Method $Method -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
 	}
@@ -231,11 +231,19 @@ function Get-VstsWorkItem {
     .SYNOPSIS 
         Get work items from VSTS
 #>
-    param($AccountName, $User, $Token, [Parameter(Mandatory)]$Id)
+    param(
+	[Parameter(Mandatory, ParameterSetname='Account')]$AccountName, 
+	[Parameter(Mandatory, ParameterSetname='Account')]$User, 
+	[Parameter(Mandatory, ParameterSetname='Account')]$Token, 
+	[Parameter(Mandatory, ParameterSetname='Session')]$Session, 
+	[Parameter(Mandatory)]$Id)
 
-    $authorization = Get-VstsAuthorization -User $user -Token $token
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
 
-    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/wit/workitems?api-version=1.0&ids=$Id" -Method GET -ContentType 'application/json' -Headers @{Authorization=$authorization} 
+	Invoke-VstsEndpoint -Session $Session -Path 'wit/workitems' -QueryStringParameters @{ids = $id}
 }
 
 function New-VstsWorkItem {
@@ -243,9 +251,29 @@ function New-VstsWorkItem {
     .SYNOPSIS 
         Create new work items in VSTS
 #>
-    param($AccountName, $Project, $User, $Token, $PropertyHashtable, $WorkItemType)
+    param(
+	[Parameter(Mandatory, ParameterSetname='Account')]
+	$AccountName, 
+	[Parameter(Mandatory, ParameterSetname='Account')]
+	$User, 
+	[Parameter(Mandatory, ParameterSetname='Account')]
+	$Token, 
+	[Parameter(Mandatory, ParameterSetname='Session')]
+	$Session, 
+	[Parameter(Mandatory)]
+	$Project,
+	[Parameter()]
+	[Hahstable]
+	$PropertyHashtable, 
+	[Parameter(Mandatory)]
+	[string]
+	$WorkItemType
+	)
 
-    $authorization = Get-VstsAuthorization -User $user -Token $token
+    if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
 
     $Fields = foreach($kvp in $PropertyHashtable.GetEnumerator())
     {
@@ -257,8 +285,8 @@ function New-VstsWorkItem {
     }
 
     $Body = $Fields | ConvertTo-Json
-    
-    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/$Project/_apis/wit/workitems/`$$($WorkItemType)?api-version=1.0" -Method PATCH -ContentType 'application/json-patch+json' -Headers @{Authorization=$authorization} -Body $Body
+
+	Invoke-VstsEndpoint -Session $Session -Path "wit/workitems/`$$($WorkItemType)" -Method PATCH -Project $Project -Body $Body
 }
 
 function Get-VstsWorkItemQuery {
