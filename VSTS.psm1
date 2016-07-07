@@ -1,4 +1,4 @@
-﻿function New-VSTSSession {
+﻿function New-VstsSession {
 	param([Parameter()]$AccountName, 
           [Parameter(Mandatory=$true)]$User, 
           [Parameter(Mandatory=$true)]$Token,
