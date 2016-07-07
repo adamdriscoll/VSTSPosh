@@ -23,11 +23,11 @@ function Invoke-VstsEndpoint {
           [Parameter(Mandatory=$true, ParameterSetName='Account')]$Token, 
 		  [Parameter(Mandatory=$true, ParameterSetName='Session')]$Session, 
           [Hashtable]$QueryStringParameters, 
-          $Project,
+          [string]$Project,
           [Uri]$Path, 
-          $ApiVersion='1.0', 
-          [ValidateSet('Get', 'PUT', 'POST', 'DELETE')]$Method='GET',
-		  $Body)
+          [string]$ApiVersion='1.0', 
+          [ValidateSet('GET', 'PUT', 'POST', 'DELETE')]$Method='GET',
+		  [string]$Body)
 
     $queryString = [System.Web.HttpUtility]::ParseQueryString([string]::Empty)
    
@@ -42,7 +42,7 @@ function Invoke-VstsEndpoint {
     $queryString["api-version"] = $ApiVersion
     $queryString = $queryString.ToString();
 
-	if ($PSCmdlet.ParameterSetName -eq 'Session')
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
 		$authorization = Get-VstsAuthorization -User $user -Token $token
 		$UriBuilder = New-Object System.UriBuilder -ArgumentList "https://$AccountName.visualstudio.com"
@@ -104,11 +104,19 @@ function Get-VstsProject {
     .SYNOPSIS 
         Get projects in a VSTS account.
 #>
-    param($AccountName, $User, $Token, $Name)
+    param(
+		[Parameter(Mandatory, ParameterSetname='Account')]$AccountName, 
+		[Parameter(Mandatory, ParameterSetname='Account')]$User, 
+		[Parameter(Mandatory, ParameterSetname='Account')]$Token, 
+		[Parameter(Mandatory, ParameterSetname='Session')]$Session, 
+		[string]$Name)
     
-    $authorization = Get-VstsAuthorization -User $user -Token $token
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
 
-    $Value  = Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects?api-version=1.0" -Method GET -ContentType 'application/json' -Headers @{Authorization=$authorization}
+	$Value = Invoke-VstsEndpoint -Session $Session -Path 'projects' 
 
 	if ($PSBoundParameters.ContainsKey("Name"))
 	{
@@ -121,14 +129,17 @@ function Get-VstsProject {
 }
 
 function Wait-VSTSProject {
-	param($AccountName, $UserName, $Token, $Name, $Attempts = 10, [Switch]$Exists)
+	param([Parameter(Mandatory)]$Session, 
+	      [Parameter(Mandatory)]$Name, 
+		  $Attempts = 10, 
+		  [Switch]$Exists)
 
 	$Retries = 0
 	do {
 		#Takes a few seconds for the project to be created
 		Start-Sleep -Seconds 10
 
-		$TeamProject = Get-VSTSProject -AccountName $AccountName -User $userName -Token $token -Name $Name
+		$TeamProject = Get-VSTSProject -Session $Session -Name $Name
 
 		$Retries++
 	} while ((($TeamProject -eq $null -and $Exists) -or ($TeamProject -ne $null -and -not $Exists)) -and $Retries -le $Attempts)
@@ -178,7 +189,7 @@ function New-VstsProject
 
 	if ($Wait)
 	{
-		Wait-VSTSProject -AccountName $AccountName -UserName $User -Token $Token -Name $Name -Exists
+		Wait-VSTSProject -Session $Session -Name $Name -Exists
 	}
 }
 
@@ -188,26 +199,30 @@ function Remove-VSTSProject {
 			Deletes a project from the specified VSTS account.
 	#>
 	param(
-		[Parameter(Mandatory)]$AccountName, 
-		[Parameter(Mandatory)]$User, 
-		[Parameter(Mandatory)]$Token, 
+		[Parameter(Mandatory, ParameterSetname='Account')]$AccountName, 
+		[Parameter(Mandatory, ParameterSetname='Account')]$User, 
+		[Parameter(Mandatory, ParameterSetname='Account')]$Token, 
+		[Parameter(Mandatory, ParameterSetname='Session')]$Session,  
 		[Parameter(Mandatory)]$Name,
 		[Parameter()][Switch]$Wait)
 
-		$Id = Get-VstsProject -AccountName $AccountName -User $User -Token $Token | Where Name -EQ $Name | Select -ExpandProperty Id
+		if ($PSCmdlet.ParameterSetName -eq 'Account')
+		{
+			$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+		}
+
+		$Id = Get-VstsProject -Session $Session -Name $Name | Select -ExpandProperty Id
 
 		if ($Id -eq $null)
 		{
 			throw "Project $Name not found in $AccountName."
 		}
-		
-		$authorization = Get-VstsAuthorization -User $user -Token $token
 
-		Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects/$($Id)?api-version=1.0" -Method DELETE -Headers @{Authorization=$authorization}
+		Invoke-VstsEndpoint -Session $Session -Path "projects/$Id" -Method DELETE
 
 		if ($Wait)
 		{
-			Wait-VSTSProject -AccountName $AccountName -UserName $User -Token $Token -Name $Name
+			Wait-VSTSProject -Session $Session -Name $Name
 		}
 }
 
