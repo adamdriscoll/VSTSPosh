@@ -1,30 +1,33 @@
-﻿function Connect-VSTS {
-	param([Parameter(Mandatory=$true, ParameterSetName='VSTS')]$AccountName, 
+﻿function New-VSTSSession {
+	param([Parameter()]$AccountName, 
           [Parameter(Mandatory=$true)]$User, 
           [Parameter(Mandatory=$true)]$Token,
-		  [Parameter(ParameterSetName='TFS')][string]$Collection = 'DefaultCollection',
-		  [Parameter(ParameterSetName='TFS')][string]$Server = 'visualstudio.com'
+		  [Parameter()][string]$Collection = 'DefaultCollection',
+		  [Parameter()][string]$Server = 'visualstudio.com',
+		  [Parameter()][ValidateSet('HTTP', 'HTTPS')]$Scheme = 'HTTPS'
 		  )
 
-	$Script:Connection = @{
+	[PSCustomObject]@{
 		AccountName = $AccountName
 		User = $User
 		Token = $Token
 		Collection = $Collection
 		Server = $Server
-		Type = $PSCmdlet.ParameterSetName
+		Scheme = $Scheme
 	}
 }
 
 function Invoke-VstsEndpoint {
-    param([Parameter(Mandatory=$true)]$AccountName, 
-          [Parameter(Mandatory=$true)]$User, 
-          [Parameter(Mandatory=$true)]$Token, 
+    param([Parameter(Mandatory=$true, ParameterSetName='Account')]$AccountName, 
+          [Parameter(Mandatory=$true, ParameterSetName='Account')]$User, 
+          [Parameter(Mandatory=$true, ParameterSetName='Account')]$Token, 
+		  [Parameter(Mandatory=$true, ParameterSetName='Session')]$Session, 
           [Hashtable]$QueryStringParameters, 
           $Project,
           [Uri]$Path, 
           $ApiVersion='1.0', 
-          [ValidateSet('Get', 'PUT', 'POST', 'DELETE')]$Method='GET')
+          [ValidateSet('Get', 'PUT', 'POST', 'DELETE')]$Method='GET',
+		  $Body)
 
     $queryString = [System.Web.HttpUtility]::ParseQueryString([string]::Empty)
    
@@ -39,24 +42,50 @@ function Invoke-VstsEndpoint {
     $queryString["api-version"] = $ApiVersion
     $queryString = $queryString.ToString();
 
-    $authorization = Get-VstsAuthorization -User $user -Token $token
+	if ($PSCmdlet.ParameterSetName -eq 'Session')
+	{
+		$authorization = Get-VstsAuthorization -User $user -Token $token
+		$UriBuilder = New-Object System.UriBuilder -ArgumentList "https://$AccountName.visualstudio.com"
+		$Collection = "DefaultCollection"
+	}
+	else
+	{
+		$authorization = Get-VstsAuthorization -User $Session.User -Token $Session.Token
+		if ([String]::IsNullOrEmpty($Session.AccountName))
+		{
+			$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.Server)"
+		}
+		else
+		{
+			$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$AccountName.visualstudio.com"
+		}
+		$Collection = $Session.Collection
+	}
 
-    $UriBuilder = New-Object System.UriBuilder -ArgumentList "https://$AccountName.visualstudio.com"
     $UriBuilder.Query = $queryString
     if ([String]::IsNullOrEmpty($Project))
     {
-        $UriBuilder.Path = "DefaultCollection/_apis/$Path"
+        $UriBuilder.Path = "$Collection/_apis/$Path"
     }
     else 
     {
-        $UriBuilder.Path = "DefaultCollection/$Project/_apis/$Path"
+        $UriBuilder.Path = "$Collection/$Project/_apis/$Path"
     }
 
     $Uri = $UriBuilder.Uri
 
     Write-Verbose "Invoke URI [$uri]"
 
-    Invoke-RestMethod $Uri -Method $Method -ContentType 'application/json' -Headers @{Authorization=$authorization} 
+	if ($Method -eq 'PUT' -or $Method -eq 'POST')
+	{
+		Invoke-RestMethod $Uri -Method $Method -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
+	}
+	else
+	{
+		Invoke-RestMethod $Uri -Method $Method -ContentType 'application/json' -Headers @{Authorization=$authorization} 
+	}
+
+    
 }
 
 function Get-VstsAuthorization {
@@ -117,16 +146,20 @@ function New-VstsProject
 			Creates a new project in a VSTS account
 	#>
 	param(
-	[Parameter(Mandatory)]$AccountName, 
-	[Parameter(Mandatory)]$User, 
-	[Parameter(Mandatory)]$Token, 
+	[Parameter(Mandatory, ParameterSetname='Account')]$AccountName, 
+	[Parameter(Mandatory, ParameterSetname='Account')]$User, 
+	[Parameter(Mandatory, ParameterSetname='Account')]$Token, 
+	[Parameter(Mandatory, ParameterSetname='Session')]$Session, 
 	[Parameter(Mandatory)]$Name, 
 	[Parameter()]$Description, 
 	[Parameter()][ValidateSet('Git')]$SourceControlType = 'Git',
 	[Parameter()]$TemplateTypeId = '6b724908-ef14-45cf-84f8-768b5384da45',
 	[Switch]$Wait)
 
-    $authorization = Get-VstsAuthorization -User $user -Token $token
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
 
 	$Body = @{
 		name = $Name
@@ -141,8 +174,8 @@ function New-VstsProject
 		}
 	} | ConvertTo-Json
 
-    Invoke-RestMethod "https://$AccountName.visualstudio.com/DefaultCollection/_apis/projects?api-version=1.0" -Method POST -ContentType 'application/json' -Headers @{Authorization=$authorization} -Body $Body
-	
+	Invoke-VstsEndpoint -Session $Session -Path 'projects' -Method POST -Body $Body
+
 	if ($Wait)
 	{
 		Wait-VSTSProject -AccountName $AccountName -UserName $User -Token $Token -Name $Name -Exists
