@@ -87,7 +87,7 @@ function Wait-VSTSProject {
 		$Retries++
 	} while ((($TeamProject -eq $null -and $Exists) -or ($TeamProject -ne $null -and -not $Exists)) -and $Retries -le $Attempts)
 
-	if ($TeamProject -eq $null)
+	if (($TeamProject -eq $null -and $Exists) -or ($TeamProject -ne $null -and -not $Exists) ) 
 	{
 		throw "Failed to create team project!" 
 	}
