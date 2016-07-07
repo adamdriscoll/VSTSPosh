@@ -1,4 +1,22 @@
-﻿function Invoke-VstsEndpoint {
+﻿function Connect-VSTS {
+	param([Parameter(Mandatory=$true, ParameterSetName='VSTS')]$AccountName, 
+          [Parameter(Mandatory=$true)]$User, 
+          [Parameter(Mandatory=$true)]$Token,
+		  [Parameter(ParameterSetName='TFS')][string]$Collection = 'DefaultCollection',
+		  [Parameter(ParameterSetName='TFS')][string]$Server = 'visualstudio.com'
+		  )
+
+	$Script:Connection = @{
+		AccountName = $AccountName
+		User = $User
+		Token = $Token
+		Collection = $Collection
+		Server = $Server
+		Type = $PSCmdlet.ParameterSetName
+	}
+}
+
+function Invoke-VstsEndpoint {
     param([Parameter(Mandatory=$true)]$AccountName, 
           [Parameter(Mandatory=$true)]$User, 
           [Parameter(Mandatory=$true)]$Token, 
@@ -34,7 +52,6 @@
         $UriBuilder.Path = "DefaultCollection/$Project/_apis/$Path"
     }
 
-  
     $Uri = $UriBuilder.Uri
 
     Write-Verbose "Invoke URI [$uri]"

@@ -1,4 +1,4 @@
-if ($psVersion.Major -ge 5)
+if ($PSVersionTable.PSVersion.Major -ge 5)
 {
     Write-Verbose -Verbose "Installing PSScriptAnalyzer"
     $PSScriptAnalyzerModuleName = "PSScriptAnalyzer"
