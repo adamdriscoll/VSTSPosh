@@ -21,6 +21,7 @@ $NewModuleManifestParams = @{
 	FunctionsToExport = $FunctionsToExport
 	ProjectUri = 'https://github.com/adamdriscoll/vstsposh'
 	Tags = @('VSTS')
+	RequiredAssemblies = 'System.Web'
 }
 
 New-ModuleManifest @NewModuleManifestParams
