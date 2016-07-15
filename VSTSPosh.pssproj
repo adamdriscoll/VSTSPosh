@@ -32,6 +32,7 @@
     <Compile Include="InvokeTests.ps1" />
     <Compile Include="LICENSE" />
     <Compile Include="PublishModule.ps1" />
+    <Compile Include="Unit.tests.ps1" />
     <Compile Include="README.md" />
     <Compile Include="VSTS.psm1" />
   </ItemGroup>

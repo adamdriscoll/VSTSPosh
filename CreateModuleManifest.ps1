@@ -8,7 +8,8 @@ $FunctionsToExport = @(
 'Get-VstsCodePolicy',
 'New-VstsCodePolicy',
 'New-VstsGitRepository',
-'Get-VstsGitRepository')
+'Get-VstsGitRepository',
+'New-VstsSession')
 
 $NewModuleManifestParams = @{
 	ModuleVersion = $ENV:APPVEYOR_BUILD_VERSION
@@ -20,6 +21,7 @@ $NewModuleManifestParams = @{
 	FunctionsToExport = $FunctionsToExport
 	ProjectUri = 'https://github.com/adamdriscoll/vstsposh'
 	Tags = @('VSTS')
+	RequiredAssemblies = 'System.Web'
 }
 
 New-ModuleManifest @NewModuleManifestParams
