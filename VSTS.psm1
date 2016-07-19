@@ -158,11 +158,21 @@ function New-VstsProject
 	[Parameter()]$Description, 
 	[Parameter()][ValidateSet('Git')]$SourceControlType = 'Git',
 	[Parameter()]$TemplateTypeId = '6b724908-ef14-45cf-84f8-768b5384da45',
+	[Parameter()]$TemplateTypeName = 'Agile',
 	[Switch]$Wait)
 
 	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
 		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
+
+	if ($PSBoundParameters.ContainsKey('TemplateTypeName'))
+	{
+		$TemplateTypeId = Get-VstsProcess -Session $Session | Where Name -EQ $TemplateTypeName | Select -ExpandProperty Id
+		if ($TemplateTypeId -eq $null)
+		{
+			throw "Template $TemplateTypeName not found."
+		}
 	}
 
 	$Body = @{
@@ -473,4 +483,18 @@ function New-VstsCodePolicy {
 	}
 
 	Invoke-VstsEndpoint -Session $Session -Project $Project -ApiVersion '2.0-preview.1' -Body $Policy -Method POST
+}
+
+function Get-VstsProcess {
+    <#
+        .SYNOPSIS
+            Gets team project processes.
+    #>
+
+    param(
+		[Parameter(Mandatory, ParameterSetname='Session')]
+		$Session)
+
+     $Result = Invoke-VstsEndpoint -Session $Session -Path 'process/processes'
+     $Result.Value     
 }

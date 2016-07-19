@@ -9,7 +9,8 @@ $FunctionsToExport = @(
 'New-VstsCodePolicy',
 'New-VstsGitRepository',
 'Get-VstsGitRepository',
-'New-VstsSession')
+'New-VstsSession',
+'Get-VstsProcess')
 
 $NewModuleManifestParams = @{
 	ModuleVersion = $ENV:APPVEYOR_BUILD_VERSION
