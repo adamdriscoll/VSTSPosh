@@ -492,9 +492,41 @@ function Get-VstsProcess {
     #>
 
     param(
-		[Parameter(Mandatory, ParameterSetname='Session')]
+		[Parameter(Mandatory)]
 		$Session)
 
      $Result = Invoke-VstsEndpoint -Session $Session -Path 'process/processes'
+     $Result.Value     
+}
+
+function Get-VstsBuild {
+    <#
+        .SYNOPSIS
+            Gets team project builds.
+    #>
+
+    param(
+		[Parameter(Mandatory)]
+		$Session,
+		[Parameter(Mandatory)]
+		$Project)
+
+     $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/builds' -Project $Project -ApiVersion '2.0'
+     $Result.Value     
+}
+
+function Get-VstsBuildDefinition {
+    <#
+        .SYNOPSIS
+            Gets team project build definitions.
+    #>
+
+    param(
+		[Parameter(Mandatory)]
+		$Session,
+		[Parameter(Mandatory)]
+		$Project)
+
+     $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/definitions' -Project $Project -ApiVersion '2.0'
      $Result.Value     
 }
