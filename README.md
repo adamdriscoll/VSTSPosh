@@ -13,6 +13,7 @@ https://www.visualstudio.com/en-us/integrate/api/overview
 	- Get-VstsProject
 	- New-VstsProject
 	- Remove-VstsProject
+	- Get-VstsProcess
 - Work
 	- Get-VstsWorkItem
 	- New-VstsWorkItem
