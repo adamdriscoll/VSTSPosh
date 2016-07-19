@@ -530,3 +530,117 @@ function Get-VstsBuildDefinition {
      $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/definitions' -Project $Project -ApiVersion '2.0'
      $Result.Value     
 }
+
+
+function New-VstsBuildDefinition {
+	<#
+        .SYNOPSIS
+            Gets build definitions for the specified project.
+    #>
+
+	param(
+		[Parameter(Mandatory)]
+		$Session,
+	    [Parameter(Mandatory=$true)]
+		$Project,
+		[Parameter(Mandatory=$true)]
+		$Name,
+		[Parameter()]
+		$DisplayName = $Name,
+		[Parameter(Mandatory=$true)]
+		$QueueId
+	)
+
+	@{
+	  name =  $Name
+	  type = "build"
+	  quality = "definition"
+	  queue = @{
+		id = $QueueId
+	  }
+	  build = @(
+		@{
+		  enabled = $true
+		  continueOnError = $false
+		  alwaysRun = $false
+		  displayName = $DisplayName
+		  task = @{
+			id = "71a9a2d3-a98a-4caa-96ab-affca411ecda"
+			versionSpec = "*"
+		  }
+		  inputs = @{
+			"solution" = "**\\*.sln"
+			"msbuildArgs" = ""
+			"platform" = "$(platform)"
+			"configuration"= "$(config)"
+			"clean" = "false"
+			"restoreNugetPackages" = "true"
+			"vsLocationMethod" = "version"
+			"vsVersion" = "latest"
+			"vsLocation" =  ""
+			"msbuildLocationMethod" = "version"
+			"msbuildVersion" = "latest" 
+			"msbuildArchitecture" = "x86"
+			"msbuildLocation" = ""
+			"logProjectEvents" = "true"
+		  }
+		},
+		@{
+		  "enabled" = $true
+		  "continueOnError" = $false
+		  "alwaysRun" = $false
+		  "displayName" = "Test Assemblies **\\*test*.dll;-:**\\obj\\**"
+		  "task" = @{
+			"id" = "ef087383-ee5e-42c7-9a53-ab56c98420f9"
+			"versionSpec" = "*"
+		  }
+		  "inputs" = @{
+			"testAssembly" = "**\\*test*.dll;-:**\\obj\\**"
+			"testFiltercriteria" = ""
+			"runSettingsFile" = ""
+			"codeCoverageEnabled" = "true"
+			"otherConsoleOptions" = ""
+			"vsTestVersion" = "14.0"
+			"pathtoCustomTestAdapters" = ""
+		  }
+		}
+	  )
+	  "repository" = @{
+		"id" = "278d5cd2-584d-4b63-824a-2ba458937249"
+		"type" = "tfsgit"
+		"name" = "Fabrikam-Fiber-Git"
+		"localPath" = "$(sys.sourceFolder)/MyGitProject"
+		"defaultBranch" ="refs/heads/master"
+		"url" = "https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_git/Fabrikam-Fiber-Git"
+		"clean" = "false"
+	  }
+	  "options" = @(
+		@{
+		  "enabled" = $true
+		  "definition" = @{
+			"id" = "7c555368-ca64-4199-add6-9ebaf0b0137d"
+		  }
+		  "inputs" = @{
+			"parallel" = "false"
+			"multipliers" = @("config","platform")
+		  }
+		}
+	  )
+	  "variables" = @{
+		"forceClean" = @{
+		  "value" = "false"
+		  "allowOverride" = $true
+		}
+		"config" =  @{
+		  "value" = "debug, release"
+		  "allowOverride" = $true
+		}
+		"platform" = @{
+		  "value" = "any cpu"
+		  "allowOverride" = $true
+		}
+	  }
+	  "triggers" = @()
+	  "comment" = "my first definition"
+	}
+}
