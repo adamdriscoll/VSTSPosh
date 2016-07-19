@@ -22,6 +22,14 @@ Describe "New-VSTSProject" -Tags Integration {
 			New-VSTSProject -Session $Session -Name $ProjectName -Wait
 			Remove-VSTSProject -Session $Session -Name $ProjectName
 		}
+
+		It "Create new project with specified template name" {
+			$ProjectName = New-ProjectName
+			$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
+			New-VSTSProject -Session $Session -Name $ProjectName -Wait -TemplateTypeName 'Scrum'
+			Get-VSTSProject -Session $Session -Name $ProjectName | Should not be $null
+			Remove-VSTSProject -Session $Session -Name $ProjectName
+		}
 	}
 }
 
@@ -66,6 +74,27 @@ Describe "Work items" -Tags "Integration" {
 			
 			$WI = New-VstsWorkItem -Session $Session -WorkItemType 'Task' -Project $ProjectName -PropertyHashtable @{ 'System.Title' = 'This is a test work item'; 'System.Description' = 'Test'}
 			$WI | Should not be $null
+		}
+	}
+
+	Remove-VSTSProject -Session $Session -Name $ProjectName
+}
+
+Describe "Processes" -Tags "Integration" {
+	$ProjectName = New-ProjectName
+	$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
+	New-VSTSProject -Session $Session -Name $ProjectName -Wait
+
+	Context "Has default process templates" {
+		It "Returns default process template" {
+			$Process = Get-VstsProcess -Session $Session | Where Name -EQ 'Agile'
+			$Process | Should not be $null
+			
+			$Process = Get-VstsProcess -Session $Session | Where Name -EQ 'CMMI'
+			$Process | Should not be $null
+
+			$Process = Get-VstsProcess -Session $Session | Where Name -EQ 'SCRUM'
+			$Process | Should not be $null
 		}
 	}
 
