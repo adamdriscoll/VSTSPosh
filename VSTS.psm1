@@ -354,7 +354,7 @@ function New-VstsGitRepository {
 	[Parameter(Mandatory, ParameterSetname='Session')]
 	$Session, 
     [Parameter(Mandatory=$true)]
-	$ProjectId,
+	$Project,
     [Parameter(Mandatory=$true)]
 	$RepositoryName)  
 
@@ -363,10 +363,15 @@ function New-VstsGitRepository {
 		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
 	}
 
+	if (-not (Test-Guid $Project))
+	{
+		$Project = Get-VstsProject -Session $Session -Name $Project | Select -ExpandProperty Id
+	}
+
     $Body = @{
         Name = $RepositoryName
         Project = @{
-            Id = $ProjectId
+            Id = $Project
         }
     } | ConvertTo-Json
 
@@ -531,6 +536,12 @@ function Get-VstsBuildDefinition {
      $Result.Value     
 }
 
+function Test-Guid {
+	param([Parameter(Mandatory)]$Input)
+
+	$Guid = [Guid]::Empty
+	[Guid]::TryParse($Input, [ref]$Guid)
+}
 
 function New-VstsBuildDefinition {
 	<#
@@ -547,16 +558,25 @@ function New-VstsBuildDefinition {
 		$Name,
 		[Parameter()]
 		$DisplayName = $Name,
+		[Parameter()]
+		$Comment,
 		[Parameter(Mandatory=$true)]
-		$QueueId
+		$Queue,
+		[Parameter(Mandatory=$true)]
+		[PSCustomObject]$Repository 
 	)
 
-	@{
+	if (-not (Test-Guid -Input $Queue))
+	{
+		$Queue = Get-VstsBuildQueue -Session $Session | Where Name -EQ $Queue | Select -ExpandProperty Id
+	}
+
+	$Body = @{
 	  name =  $Name
 	  type = "build"
 	  quality = "definition"
 	  queue = @{
-		id = $QueueId
+		id = $Queue
 	  }
 	  build = @(
 		@{
@@ -571,8 +591,8 @@ function New-VstsBuildDefinition {
 		  inputs = @{
 			"solution" = "**\\*.sln"
 			"msbuildArgs" = ""
-			"platform" = "$(platform)"
-			"configuration"= "$(config)"
+			"platform" = '$(platform)'
+			"configuration"= '$(config)'
 			"clean" = "false"
 			"restoreNugetPackages" = "true"
 			"vsLocationMethod" = "version"
@@ -606,12 +626,12 @@ function New-VstsBuildDefinition {
 		}
 	  )
 	  "repository" = @{
-		"id" = "278d5cd2-584d-4b63-824a-2ba458937249"
+		"id" = $Repository.Id
 		"type" = "tfsgit"
-		"name" = "Fabrikam-Fiber-Git"
-		"localPath" = "$(sys.sourceFolder)/MyGitProject"
+		"name" = $Repository.Name
+		"localPath" = "`$(sys.sourceFolder)/$($Repository.Name)"
 		"defaultBranch" ="refs/heads/master"
-		"url" = "https://fabrikam-fiber-inc.visualstudio.com/DefaultCollection/_git/Fabrikam-Fiber-Git"
+		"url" = $Repository.Url
 		"clean" = "false"
 	  }
 	  "options" = @(
@@ -641,6 +661,23 @@ function New-VstsBuildDefinition {
 		}
 	  }
 	  "triggers" = @()
-	  "comment" = "my first definition"
-	}
+	  "comment" = $Comment
+	} | ConvertTo-Json -Depth 20
+
+	Invoke-VstsEndpoint -Session $Session -Path 'build/definitions' -ApiVersion 2.0 -Method POST -Body $Body -Project $Project
+}
+
+function Get-VstsBuildQueue {
+	<#
+        .SYNOPSIS
+            Gets build definitions for the collection.
+    #>
+
+	param(
+		[Parameter(Mandatory)]
+		$Session
+		)
+
+	 $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/queues' -ApiVersion 2.0
+     $Result.Value   
 }
