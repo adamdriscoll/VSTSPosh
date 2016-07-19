@@ -18,6 +18,9 @@ https://www.visualstudio.com/en-us/integrate/api/overview
 	- Get-VstsWorkItem
 	- New-VstsWorkItem
 	- Get-VstsWorkItemQuery
+- Build
+	- Get-VstsBuild
+	- Get-VstsBuildDefinition
 - Code	
 	- Policy
 		- Get-VstsCodePolicy
