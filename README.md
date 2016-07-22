@@ -28,3 +28,4 @@ https://www.visualstudio.com/en-us/integrate/api/overview
 	- Git
 		- New-VstsGitRepository
 		- Get-VstsGitRepository
+		- ConvertTo-VstsGitRepository

@@ -681,3 +681,41 @@ function Get-VstsBuildQueue {
 	 $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/queues' -ApiVersion 2.0
      $Result.Value   
 }
+
+function ConvertTo-VstsGitRepository {
+	<#
+		.SYNOPSIS
+			Converts a TFVC repository to a VSTS Git repository. 
+	#>
+    param(
+		[Parameter(Mandatory)]$Session,
+		[Parameter(Mandatory)]$TargetName, 
+		[Parameter(Mandatory)]$SourceFolder, 
+		[Parameter(Mandatory)]$ProjectName)
+
+	$GitCommand = Get-Command git 
+	if ($GitCommand -eq $null -or $GitCommand.CommandType -ne 'Application' -or $GitCommand.Name -ne 'git.exe')
+	{
+		throw "Git-tfs needs to be installed to use this command. See https://github.com/git-tfs/git-tfs. You can install with Chocolatey: cinst gittfs"
+	}
+
+	$GitTfsCommand = Get-Command git-tfs 
+	if ($GitTfsCommand -eq $null -or $GitTfsCommand.CommandType -ne 'Application' -or $GitTfsCommand.Name -ne 'git-tfs.exe')
+	{
+		throw "Git-tfs needs to be installed to use this command. See https://github.com/git-tfs/git-tfs. You can install with Chocolatey: cinst gittfs"
+	}
+
+    git tfs clone "https://$($Session.AccountName).visualstudio.com/defaultcollection" "$/$ProjectName/$SourceFolder" --branches=none
+
+    Push-Location (Split-Path $SourceFolder -Leaf)
+
+    New-VstsGitRepository -Session $Session -RepositoryName $TargetName -Project $ProjectName | Out-Null
+
+    git checkout -b develop
+    git remote add origin https://$($Session.AccountName).visualstudio.com/DefaultCollection/$ProjectName/_git/$TargetName
+    git push --all origin
+    git tfs cleanup
+
+    Pop-Location
+	Remove-Item (Split-Path $SourceFolder -Leaf) -Force
+}
