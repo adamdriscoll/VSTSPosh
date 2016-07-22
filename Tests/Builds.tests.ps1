@@ -22,7 +22,7 @@ Describe "Builds" -Tags "Integration" {
 			$Queue | Should not be $null
 		}
 	}
-
+	<#
 	Context "Has no build definitions" {
 		It "Creates new build definition" {
 			$Repository = New-VstsGitRepository -Session $Session -RepositoryName 'TestRepo' -Project $ProjectName
@@ -31,6 +31,7 @@ Describe "Builds" -Tags "Integration" {
 			$Definition | Should not be $null
 		}
 	}
+	#>
 
 	Remove-VSTSProject -Session $Session -Name $ProjectName
 }
