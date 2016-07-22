@@ -24,7 +24,7 @@ $NewModuleManifestParams = @{
 	RootModule = 'VSTS.psm1'
 	FunctionsToExport = $FunctionsToExport
 	ProjectUri = 'https://github.com/adamdriscoll/vstsposh'
-	Tags = @('VSTS', 'TFS', 'Visual Studio Team Services', 'Team Foundation Server', 'VSO')
+	Tags = @('VSTS', 'TFS', 'VisualStudioTeamServices', 'TeamFoundationServer', 'VSO')
 	RequiredAssemblies = 'System.Web'
 }
 
