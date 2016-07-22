@@ -7,7 +7,7 @@ function New-ProjectName {
 }
 
 Import-Module (Join-Path $PSScriptRoot '..\VSTS.psm1') -Force
-t 
+
 Describe "Processes" -Tags "Integration" {
 	$ProjectName = New-ProjectName
 	$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
