@@ -33,7 +33,6 @@
     <Compile Include="PublishModule.ps1" />
     <Compile Include="Tests\Builds.tests.ps1" />
     <Compile Include="Tests\Code.tests.ps1" />
-    <Compile Include="Tests\Processes.tests.ps1" />
     <Compile Include="Tests\Projects.tests.ps1" />
     <Compile Include="Tests\WorkItems.tests.ps1" />
     <Compile Include="Tests\Unit.tests.ps1" />
