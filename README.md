@@ -13,10 +13,14 @@ https://www.visualstudio.com/en-us/integrate/api/overview
 	- Get-VstsProject
 	- New-VstsProject
 	- Remove-VstsProject
+	- Get-VstsProcess
 - Work
 	- Get-VstsWorkItem
 	- New-VstsWorkItem
 	- Get-VstsWorkItemQuery
+- Build
+	- Get-VstsBuild
+	- Get-VstsBuildDefinition
 - Code	
 	- Policy
 		- Get-VstsCodePolicy
@@ -24,3 +28,4 @@ https://www.visualstudio.com/en-us/integrate/api/overview
 	- Git
 		- New-VstsGitRepository
 		- Get-VstsGitRepository
+		- ConvertTo-VstsGitRepository

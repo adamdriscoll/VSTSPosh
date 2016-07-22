@@ -158,11 +158,21 @@ function New-VstsProject
 	[Parameter()]$Description, 
 	[Parameter()][ValidateSet('Git')]$SourceControlType = 'Git',
 	[Parameter()]$TemplateTypeId = '6b724908-ef14-45cf-84f8-768b5384da45',
+	[Parameter()]$TemplateTypeName = 'Agile',
 	[Switch]$Wait)
 
 	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
 		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+	}
+
+	if ($PSBoundParameters.ContainsKey('TemplateTypeName'))
+	{
+		$TemplateTypeId = Get-VstsProcess -Session $Session | Where Name -EQ $TemplateTypeName | Select -ExpandProperty Id
+		if ($TemplateTypeId -eq $null)
+		{
+			throw "Template $TemplateTypeName not found."
+		}
 	}
 
 	$Body = @{
@@ -344,7 +354,7 @@ function New-VstsGitRepository {
 	[Parameter(Mandatory, ParameterSetname='Session')]
 	$Session, 
     [Parameter(Mandatory=$true)]
-	$ProjectId,
+	$Project,
     [Parameter(Mandatory=$true)]
 	$RepositoryName)  
 
@@ -353,10 +363,15 @@ function New-VstsGitRepository {
 		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
 	}
 
+	if (-not (Test-Guid $Project))
+	{
+		$Project = Get-VstsProject -Session $Session -Name $Project | Select -ExpandProperty Id
+	}
+
     $Body = @{
         Name = $RepositoryName
         Project = @{
-            Id = $ProjectId
+            Id = $Project
         }
     } | ConvertTo-Json
 
@@ -473,4 +488,234 @@ function New-VstsCodePolicy {
 	}
 
 	Invoke-VstsEndpoint -Session $Session -Project $Project -ApiVersion '2.0-preview.1' -Body $Policy -Method POST
+}
+
+function Get-VstsProcess {
+    <#
+        .SYNOPSIS
+            Gets team project processes.
+    #>
+
+    param(
+		[Parameter(Mandatory)]
+		$Session)
+
+     $Result = Invoke-VstsEndpoint -Session $Session -Path 'process/processes'
+     $Result.Value     
+}
+
+function Get-VstsBuild {
+    <#
+        .SYNOPSIS
+            Gets team project builds.
+    #>
+
+    param(
+		[Parameter(Mandatory)]
+		$Session,
+		[Parameter(Mandatory)]
+		$Project)
+
+     $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/builds' -Project $Project -ApiVersion '2.0'
+     $Result.Value     
+}
+
+function Get-VstsBuildDefinition {
+    <#
+        .SYNOPSIS
+            Gets team project build definitions.
+    #>
+
+    param(
+		[Parameter(Mandatory)]
+		$Session,
+		[Parameter(Mandatory)]
+		$Project)
+
+     $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/definitions' -Project $Project -ApiVersion '2.0'
+     $Result.Value     
+}
+
+function Test-Guid {
+	param([Parameter(Mandatory)]$Input)
+
+	$Guid = [Guid]::Empty
+	[Guid]::TryParse($Input, [ref]$Guid)
+}
+
+function New-VstsBuildDefinition {
+	<#
+        .SYNOPSIS
+            Gets build definitions for the specified project.
+    #>
+
+	param(
+		[Parameter(Mandatory)]
+		$Session,
+	    [Parameter(Mandatory=$true)]
+		$Project,
+		[Parameter(Mandatory=$true)]
+		$Name,
+		[Parameter()]
+		$DisplayName = $Name,
+		[Parameter()]
+		$Comment,
+		[Parameter(Mandatory=$true)]
+		$Queue,
+		[Parameter(Mandatory=$true)]
+		[PSCustomObject]$Repository 
+	)
+
+	if (-not (Test-Guid -Input $Queue))
+	{
+		$Queue = Get-VstsBuildQueue -Session $Session | Where Name -EQ $Queue | Select -ExpandProperty Id
+	}
+
+	$Body = @{
+	  name =  $Name
+	  type = "build"
+	  quality = "definition"
+	  queue = @{
+		id = $Queue
+	  }
+	  build = @(
+		@{
+		  enabled = $true
+		  continueOnError = $false
+		  alwaysRun = $false
+		  displayName = $DisplayName
+		  task = @{
+			id = "71a9a2d3-a98a-4caa-96ab-affca411ecda"
+			versionSpec = "*"
+		  }
+		  inputs = @{
+			"solution" = "**\\*.sln"
+			"msbuildArgs" = ""
+			"platform" = '$(platform)'
+			"configuration"= '$(config)'
+			"clean" = "false"
+			"restoreNugetPackages" = "true"
+			"vsLocationMethod" = "version"
+			"vsVersion" = "latest"
+			"vsLocation" =  ""
+			"msbuildLocationMethod" = "version"
+			"msbuildVersion" = "latest" 
+			"msbuildArchitecture" = "x86"
+			"msbuildLocation" = ""
+			"logProjectEvents" = "true"
+		  }
+		},
+		@{
+		  "enabled" = $true
+		  "continueOnError" = $false
+		  "alwaysRun" = $false
+		  "displayName" = "Test Assemblies **\\*test*.dll;-:**\\obj\\**"
+		  "task" = @{
+			"id" = "ef087383-ee5e-42c7-9a53-ab56c98420f9"
+			"versionSpec" = "*"
+		  }
+		  "inputs" = @{
+			"testAssembly" = "**\\*test*.dll;-:**\\obj\\**"
+			"testFiltercriteria" = ""
+			"runSettingsFile" = ""
+			"codeCoverageEnabled" = "true"
+			"otherConsoleOptions" = ""
+			"vsTestVersion" = "14.0"
+			"pathtoCustomTestAdapters" = ""
+		  }
+		}
+	  )
+	  "repository" = @{
+		"id" = $Repository.Id
+		"type" = "tfsgit"
+		"name" = $Repository.Name
+		"localPath" = "`$(sys.sourceFolder)/$($Repository.Name)"
+		"defaultBranch" ="refs/heads/master"
+		"url" = $Repository.Url
+		"clean" = "false"
+	  }
+	  "options" = @(
+		@{
+		  "enabled" = $true
+		  "definition" = @{
+			"id" = "7c555368-ca64-4199-add6-9ebaf0b0137d"
+		  }
+		  "inputs" = @{
+			"parallel" = "false"
+			"multipliers" = @("config","platform")
+		  }
+		}
+	  )
+	  "variables" = @{
+		"forceClean" = @{
+		  "value" = "false"
+		  "allowOverride" = $true
+		}
+		"config" =  @{
+		  "value" = "debug, release"
+		  "allowOverride" = $true
+		}
+		"platform" = @{
+		  "value" = "any cpu"
+		  "allowOverride" = $true
+		}
+	  }
+	  "triggers" = @()
+	  "comment" = $Comment
+	} | ConvertTo-Json -Depth 20
+
+	Invoke-VstsEndpoint -Session $Session -Path 'build/definitions' -ApiVersion 2.0 -Method POST -Body $Body -Project $Project
+}
+
+function Get-VstsBuildQueue {
+	<#
+        .SYNOPSIS
+            Gets build definitions for the collection.
+    #>
+
+	param(
+		[Parameter(Mandatory)]
+		$Session
+		)
+
+	 $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/queues' -ApiVersion 2.0
+     $Result.Value   
+}
+
+function ConvertTo-VstsGitRepository {
+	<#
+		.SYNOPSIS
+			Converts a TFVC repository to a VSTS Git repository. 
+	#>
+    param(
+		[Parameter(Mandatory)]$Session,
+		[Parameter(Mandatory)]$TargetName, 
+		[Parameter(Mandatory)]$SourceFolder, 
+		[Parameter(Mandatory)]$ProjectName)
+
+	$GitCommand = Get-Command git 
+	if ($GitCommand -eq $null -or $GitCommand.CommandType -ne 'Application' -or $GitCommand.Name -ne 'git.exe')
+	{
+		throw "Git-tfs needs to be installed to use this command. See https://github.com/git-tfs/git-tfs. You can install with Chocolatey: cinst gittfs"
+	}
+
+	$GitTfsCommand = Get-Command git-tfs 
+	if ($GitTfsCommand -eq $null -or $GitTfsCommand.CommandType -ne 'Application' -or $GitTfsCommand.Name -ne 'git-tfs.exe')
+	{
+		throw "Git-tfs needs to be installed to use this command. See https://github.com/git-tfs/git-tfs. You can install with Chocolatey: cinst gittfs"
+	}
+
+    git tfs clone "https://$($Session.AccountName).visualstudio.com/defaultcollection" "$/$ProjectName/$SourceFolder" --branches=none
+
+    Push-Location (Split-Path $SourceFolder -Leaf)
+
+    New-VstsGitRepository -Session $Session -RepositoryName $TargetName -Project $ProjectName | Out-Null
+
+    git checkout -b develop
+    git remote add origin https://$($Session.AccountName).visualstudio.com/DefaultCollection/$ProjectName/_git/$TargetName
+    git push --all origin
+    git tfs cleanup
+
+    Pop-Location
+	Remove-Item (Split-Path $SourceFolder -Leaf) -Force
 }
