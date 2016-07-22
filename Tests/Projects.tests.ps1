@@ -34,6 +34,8 @@ Describe "Projects" -Tags Integration {
 
 	Context "Process" {
 		It "Returns default process template" {
+			$Session = New-VstsSession -AccountName $account -User $userName -Token $token
+
 			$Process = Get-VstsProcess -Session $Session | Where Name -EQ 'Agile'
 			$Process | Should not be $null
 			
