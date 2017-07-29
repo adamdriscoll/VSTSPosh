@@ -1,16 +1,66 @@
 ﻿# System.Web is not always loaded by default, so ensure it is loaded.
 Add-Type -AssemblyName System.Web
 
-function New-VstsSession {
-	param([Parameter()]$AccountName, 
-          [Parameter(Mandatory=$true)]$User, 
-          [Parameter(Mandatory=$true)]$Token,
-		  [Parameter()][string]$Collection = 'DefaultCollection',
-		  [Parameter()][string]$Server = 'visualstudio.com',
-		  [Parameter()][ValidateSet('HTTP', 'HTTPS')]$Scheme = 'HTTPS'
-		  )
+<#
+	.SYNOPSIS
+	Create a new VSTS session object that needs to be passed
+	to other VSTS module calls to provide connection
+	information. It can be used to connect to VSTS or TFS
+	APIs.
 
-	[PSCustomObject]@{
+	.PARAMETER AccountName
+	The name of the VSTS Account to. Not required for TFS
+	sessions.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS or TFS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS
+	or TFS.
+
+	.PARAMETER Collection
+	This collection to use. This defaults to
+	'DefaultCollection'.
+
+	.PARAMETER Server
+	The name of the VSTS or TFS Server to connect to.
+	For VSTS this will be 'visualstudio.com'. The default value
+	if this is not specified is 'visualstudio.com'.
+
+	.PARAMETER HTTPS
+	Use HTTP or HTTPS to connect to the server.
+	Defaults to HTTPS.
+
+	.OUTPUTS
+	VSTS Session Object.
+#>
+function New-VstsSession {
+	[CmdletBinding()]
+	[OutputType([PSCustomObject])]
+	param
+	(
+		[Parameter()]
+		[String] $AccountName,
+		
+		[Parameter(Mandatory=$true)]
+		[String] $User,
+		
+		[Parameter(Mandatory=$true)]
+		[String] $Token,
+		
+		[Parameter()]
+		[String] $Collection = 'DefaultCollection',
+		
+		[Parameter()]
+		[String] $Server = 'visualstudio.com',
+		
+		[Parameter()]
+		[ValidateSet('HTTP', 'HTTPS')]
+		[String] $Scheme = 'HTTPS'
+	)
+
+	[PSCustomObject] @{
 		AccountName = $AccountName
 		User = $User
 		Token = $Token
@@ -22,99 +72,171 @@ function New-VstsSession {
 
 <#
 	.SYNOPSIS
-		Invokes the VSTS REST API endpoint.
+	Assembles a VSTS or TFS endpoint URI object
+	to be used to connect to a VSTS or TFS endpoint.
+
+	.PARAMETER Session
+	The session object created by New-VstsSession.
 
 	.PARAMETER EndpointName
-		Set an alternate VSTS endpoint to call.
-		This is required by API calls for to preview APIs that are not
-		yet available on the primary endpoint.
+	Set an alternate VSTS endpoint to call.
+	This is required by API calls for to preview APIs that are not
+	yet available on the primary endpoint.
+#>
+function Get-VstsEndpointUri {
+	[CmdletBinding()]
+	[OutputType([System.UriBuilder])]
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		$Session,
 
-	.PARAMETER Top
-		This will add the cause the '$top' parameter to the querystring
+		[String] $EndpointName
+	)
+
+	if ([String]::IsNullOrEmpty($Session.AccountName))
+	{
+		$argumentList = ('{0}://{1}' -f $Session.Scheme, $Session.Server)
+	}
+	else
+	{
+		if ([String]::IsNullOrEmpty($EndpointName))
+		{
+			$argumentList = ('{0}://{1}.visualstudio.com' -f $Session.Scheme, $Session.AccountName)
+		}
+		else
+		{
+			$argumentList = ('{0}://{1}.{2}.visualstudio.com' -f $Session.Scheme, $Session.AccountName, $EndpointName)
+		}
+	}
+
+	$uriBuilder = New-Object `
+		-TypeName System.UriBuilder `
+		-ArgumentList $argumentList
+
+	return $uriBuilder
+}
+
+<#
+	.SYNOPSIS
+	Invokes the VSTS REST API endpoint.
+
+	.PARAMETER Session
+	The session object created by New-VstsSession.
+
+	.PARAMETER QueryStringParameters
+	A hash table containing any additional query string
+	parameters to add to the URI.
+
+	.PARAMETER Project
+	The name of the project to invoke the REST API for.
+
+	.PARAMETER Path
+	The path to add to the URI.
+
+	.PARAMETER ApiVersion
+	The version of the REST API to use.
+
+	.PARAMETER Method
+	The method to use for the REST API. Deraults to 'GET'.
+
+	.PARAMETER Body
+	The body to pass in the REST call.
+
+	.PARAMETER EndpointName
+	Set an alternate VSTS endpoint to call.
+	This is required by API calls for to preview APIs that are not
+	yet available on the primary endpoint.
+
+	.PARAMETER QueryStringExtParameters
+	A hash table containing any additional query string
+	parameters to add to the URI. These will be added with a '$'
+	pre-pended to the query string name. E.g. '&$Top=10'.
 #>
 function Invoke-VstsEndpoint {
-    param(
-		  [Parameter(Mandatory=$true)]$Session,
-		  [Hashtable]$QueryStringParameters,
-		  [string]$Project,
-          [Uri]$Path, 
-          [string]$ApiVersion='1.0', 
-          [ValidateSet('GET', 'PUT', 'POST', 'DELETE', 'PATCH')]$Method='GET',
-		  [string]$Body,
-		  [string]$EndpointName,
-  		  [Hashtable]$QueryStringExtParameters
-		)
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		$Session,
 
-    $queryString = [System.Web.HttpUtility]::ParseQueryString([string]::Empty)
-   
-    if ($QueryStringParameters -ne $null)
-    {
-        foreach($parameter in $QueryStringParameters.GetEnumerator())
-        {
-            $queryString[$parameter.Key] = $parameter.Value
-        }
-    }
+		[Hashtable] $QueryStringParameters,
+
+		[String] $Project,
+
+		[Uri] $Path,
+
+		[String] $ApiVersion='1.0',
+
+		[ValidateSet('GET', 'PUT', 'POST', 'DELETE', 'PATCH')]
+		[String] $Method = 'GET',
+
+		[String] $Body,
+
+		[String] $EndpointName,
+
+		[Hashtable] $QueryStringExtParameters
+	)
+
+	$queryString = [System.Web.HttpUtility]::ParseQueryString([string]::Empty)
+
+	if ($QueryStringParameters -ne $null)
+	{
+		foreach($parameter in $QueryStringParameters.GetEnumerator())
+		{
+			$queryString[$parameter.Key] = $parameter.Value
+		}
+	}
 
 	<#
 		These are query parmaeters that will be added prepended with a $.
 		They can't be passed in the QueryStringParameters.
 	#>
 	if ($QueryStringExtParameters -ne $null)
-    {
-        foreach($parameter in $QueryStringExtParameters.GetEnumerator())
-        {
-            $queryString['$' + $parameter.Key] = $parameter.Value
-        }
-    }
+	{
+		foreach($parameter in $QueryStringExtParameters.GetEnumerator())
+		{
+			$queryString['$' + $parameter.Key] = $parameter.Value
+		}
+	}
 
 	$queryString["api-version"] = $ApiVersion
-	$queryString = $queryString.ToString();
+	$queryString = $queryString.ToString()
 
 	$authorization = Get-VstsAuthorization -User $Session.User -Token $Session.Token
-	if ([String]::IsNullOrEmpty($Session.AccountName))
+
+	$collection = $Session.Collection
+
+	$uriBuilder = Get-VstsEndpointUri -Session $Session -EndpointName $EndpointName
+	$uriBuilder.Query = $queryString
+
+	if ([String]::IsNullOrEmpty($Project))
 	{
-		$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.Server)"
+		$uriBuilder.Path = ('{0}/_apis/{1}' -f $collection, $Path)
 	}
 	else
 	{
-		if ([String]::IsNullOrEmpty($EndpointName))
-		{
-			$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.AccountName).visualstudio.com"
-		}
-		else
-		{
-			$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.AccountName).$EndpointName.visualstudio.com"
-		}
+		$uriBuilder.Path = ('{0}/{1}/_apis/{2}' -f $collection, $Project, $Path)
 	}
-	$Collection = $Session.Collection
-	
-    $UriBuilder.Query = $queryString
-    if ([String]::IsNullOrEmpty($Project))
-    {
-        $UriBuilder.Path = "$Collection/_apis/$Path"
-    }
-    else 
-    {
-        $UriBuilder.Path = "$Collection/$Project/_apis/$Path"
-    }
 
-    $Uri = $UriBuilder.Uri
+	$uri = $uriBuilder.Uri
 
-    Write-Verbose "Invoke URI [$uri]"
+	Write-Verbose -Message "Invoke URI [$uri]"
 
-	$ContentType = 'application/json'
+	$contentType = 'application/json'
+
 	if ($Method -eq 'PUT' -or $Method -eq 'POST' -or $Method -eq 'PATCH')
 	{
 		if ($Method -eq 'PATCH')
 		{
-			$ContentType = 'application/json-patch+json'
+			$contentType = 'application/json-patch+json'
 		}
 
-		$restResult = Invoke-RestMethod $Uri -Method $Method -ContentType $ContentType -Headers @{Authorization=$authorization} -Body $Body
+		$restResult = Invoke-RestMethod $Uri -Method $Method -ContentType $ContentType -Headers @{ Authorization = $authorization } -Body $Body
 	}
 	else
 	{
-		$restResult = Invoke-RestMethod $Uri -Method $Method -ContentType $ContentType -Headers @{Authorization=$authorization} 
+		$restResult = Invoke-RestMethod $Uri -Method $Method -ContentType $ContentType -Headers @{ Authorization = $authorization }
 	}
 
 	if ($restResult.Value)
@@ -135,51 +257,94 @@ function Invoke-VstsEndpoint {
 	}
 }
 
-function Get-VstsAuthorization {
 <#
-    .SYNOPSIS
-        Generates a VSTS authorization header value from a username and Personal Access Token. 
-#>
-    param($user, $token)
+	.SYNOPSIS
+	Generates a VSTS authorization header value from a username and Personal
+	Access Token.
 
-    $Value = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $user, $token)))
-    ("Basic {0}" -f $value)
+	.PARAMETER User
+	The username of the account to generate the authentication header for.
+
+	.PARAMETER Token
+	The Personal Access Token to use in the authentication header.
+#>
+function Get-VstsAuthorization {
+	[CmdletBinding()]
+	[OutputType([String])]
+	param
+	(
+		[String] $User,
+
+		[String] $Token
+	)
+
+	$value = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $User, $Token)))
+	return ("Basic {0}" -f $value)
 }
 
-function Get-VstsProject {
 <#
-    .SYNOPSIS 
-        Get projects in a VSTS account.
+	.SYNOPSIS
+	Get projects in a VSTS account.
 #>
-    param(
-		[Parameter(Mandatory, ParameterSetname='Account')]$AccountName, 
-		[Parameter(Mandatory, ParameterSetname='Account')]$User, 
-		[Parameter(Mandatory, ParameterSetname='Account')]$Token, 
-		[Parameter(Mandatory, ParameterSetname='Session')]$Session, 
-		[string]$Name)
-    
-	if ($PSCmdlet.ParameterSetName -eq 'Account')
-	{
-		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
-	}
+function Get-VstsProject {
+	[CmdletBinding(DefaultParameterSetName = 'Name')]
+	param
+	(
+		[Parameter(Mandatory = $True)]
+		$Session,
 
-	$Value = Invoke-VstsEndpoint -Session $Session -Path 'projects' 
+		[Parameter(ParameterSetName = 'Name')]
+		[String] $Name,
 
-	if ($PSBoundParameters.ContainsKey("Name"))
+		[Parameter(ParameterSetName = 'Query')]
+		[ValidateSet('WellFormed','CreatePending','Deleting','New','All')]
+		[String] $StateFilter,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[Int32] $Top,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[Int32] $Skip
+	)
+
+	$Path = 'projects'
+	$additionalInvokeParameters = @{}
+
+	if ($PSCmdlet.ParameterSetName -eq 'Query')
 	{
-		$Value.Value | Where Name -eq $Name
+		$additionalInvokeParameters = @{
+			QueryStringParameters = (Get-VSTSQueryStringParametersFromParams `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'stateFilter')
+			QueryStringExtParameters = Get-VSTSQueryStringParametersFromParams `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'Top','Skip'
+		}
 	}
 	else
 	{
-		$Value.Value 
+		if ($PSBoundParameters.ContainsKey('Name'))
+		{
+			$Path = ('{0}/{1}' -f $Path, $Name)
+		}
 	}
+
+	$Result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Path $Path `
+		@additionalInvokeParameters
+
+	return $Result.Value
 }
 
 function Wait-VSTSProject {
-	param([Parameter(Mandatory)]$Session, 
-	      [Parameter(Mandatory)]$Name, 
-		  $Attempts = 30, 
-		  [Switch]$Exists)
+	param
+	(
+		[Parameter(Mandatory)]$Session,
+		[Parameter(Mandatory)]$Name,
+		$Attempts = 30,
+		[Switch]$Exists
+	)
 
 	$Retries = 0
 	do {
@@ -191,25 +356,25 @@ function Wait-VSTSProject {
 		$Retries++
 	} while ((($TeamProject -eq $null -and $Exists) -or ($TeamProject -ne $null -and -not $Exists)) -and $Retries -le $Attempts)
 
-	if (($TeamProject -eq $null -and $Exists) -or ($TeamProject -ne $null -and -not $Exists) ) 
+	if (($TeamProject -eq $null -and $Exists) -or ($TeamProject -ne $null -and -not $Exists) )
 	{
-		throw "Failed to create team project!" 
+		throw "Failed to create team project!"
 	}
 }
 
-function New-VstsProject 
+function New-VstsProject
 {
 	<#
 		.SYNOPSIS
 			Creates a new project in a VSTS account
 	#>
 	param(
-	[Parameter(Mandatory, ParameterSetname='Account')]$AccountName, 
-	[Parameter(Mandatory, ParameterSetname='Account')]$User, 
-	[Parameter(Mandatory, ParameterSetname='Account')]$Token, 
-	[Parameter(Mandatory, ParameterSetname='Session')]$Session, 
-	[Parameter(Mandatory)]$Name, 
-	[Parameter()]$Description, 
+	[Parameter(Mandatory, ParameterSetname='Account')]$AccountName,
+	[Parameter(Mandatory, ParameterSetname='Account')]$User,
+	[Parameter(Mandatory, ParameterSetname='Account')]$Token,
+	[Parameter(Mandatory, ParameterSetname='Session')]$Session,
+	[Parameter(Mandatory)]$Name,
+	[Parameter()]$Description,
 	[Parameter()][ValidateSet('Git')]$SourceControlType = 'Git',
 	[Parameter()]$TemplateTypeId = '6b724908-ef14-45cf-84f8-768b5384da45',
 	[Parameter()]$TemplateTypeName = 'Agile',
@@ -252,14 +417,14 @@ function New-VstsProject
 
 function Remove-VSTSProject {
 	<#
-		.SYNOPSIS 
+		.SYNOPSIS
 			Deletes a project from the specified VSTS account.
 	#>
 	param(
-		[Parameter(Mandatory, ParameterSetname='Account')]$AccountName, 
-		[Parameter(Mandatory, ParameterSetname='Account')]$User, 
-		[Parameter(Mandatory, ParameterSetname='Account')]$Token, 
-		[Parameter(Mandatory, ParameterSetname='Session')]$Session,  
+		[Parameter(Mandatory, ParameterSetname='Account')]$AccountName,
+		[Parameter(Mandatory, ParameterSetname='Account')]$User,
+		[Parameter(Mandatory, ParameterSetname='Account')]$Token,
+		[Parameter(Mandatory, ParameterSetname='Session')]$Session,
 		[Parameter(Mandatory)]$Name,
 		[Parameter()][Switch]$Wait)
 
@@ -285,14 +450,14 @@ function Remove-VSTSProject {
 
 function Get-VstsWorkItem {
 <#
-    .SYNOPSIS 
-        Get work items from VSTS
+	.SYNOPSIS
+		Get work items from VSTS
 #>
-    param(
-	[Parameter(Mandatory, ParameterSetname='Account')]$AccountName, 
-	[Parameter(Mandatory, ParameterSetname='Account')]$User, 
-	[Parameter(Mandatory, ParameterSetname='Account')]$Token, 
-	[Parameter(Mandatory, ParameterSetname='Session')]$Session, 
+	param(
+	[Parameter(Mandatory, ParameterSetname='Account')]$AccountName,
+	[Parameter(Mandatory, ParameterSetname='Account')]$User,
+	[Parameter(Mandatory, ParameterSetname='Account')]$Token,
+	[Parameter(Mandatory, ParameterSetname='Session')]$Session,
 	[Parameter(Mandatory)]$Id)
 
 	if ($PSCmdlet.ParameterSetName -eq 'Account')
@@ -305,36 +470,36 @@ function Get-VstsWorkItem {
 
 function New-VstsWorkItem {
 <#
-    .SYNOPSIS 
-        Create new work items in VSTS
+	.SYNOPSIS
+		Create new work items in VSTS
 #>
-    param(
+	param(
 	[Parameter(Mandatory, ParameterSetname='Account')]
-	$AccountName, 
+	$AccountName,
 	[Parameter(Mandatory, ParameterSetname='Account')]
-	$User, 
+	$User,
 	[Parameter(Mandatory, ParameterSetname='Account')]
-	$Token, 
+	$Token,
 	[Parameter(Mandatory, ParameterSetname='Session')]
-	$Session, 
+	$Session,
 	[Parameter(Mandatory)]
 	$Project,
 	[Parameter()]
 	[Hashtable]
-	$PropertyHashtable, 
+	$PropertyHashtable,
 	[Parameter(Mandatory)]
 	[string]
 	$WorkItemType
 	)
 
-    if ($PSCmdlet.ParameterSetName -eq 'Account')
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
 		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
 	}
 
 	if ($PropertyHashtable -ne $null)
 	{
-	    $Fields = foreach($kvp in $PropertyHashtable.GetEnumerator())
+		$Fields = foreach($kvp in $PropertyHashtable.GetEnumerator())
 		{
 			[PSCustomObject]@{
 				op = 'add'
@@ -354,63 +519,63 @@ function New-VstsWorkItem {
 }
 
 function Get-VstsWorkItemQuery {
-    <#
-    .SYNOPSIS 
-        Returns a list of work item queries from the specified folder.
-    #>
-    param(
+	<#
+	.SYNOPSIS
+		Returns a list of work item queries from the specified folder.
+	#>
+	param(
 	[Parameter(Mandatory, ParameterSetname='Account')]
-	$AccountName, 
+	$AccountName,
 	[Parameter(Mandatory, ParameterSetname='Account')]
-	$User, 
+	$User,
 	[Parameter(Mandatory, ParameterSetname='Account')]
-	$Token, 
+	$Token,
 	[Parameter(Mandatory, ParameterSetname='Session')]
-	$Session, 
-    [Parameter(Mandatory=$true)]$Project, 
-    $FolderPath)
+	$Session,
+	[Parameter(Mandatory=$true)]$Project,
+	$FolderPath)
 
 	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
 		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
 	}
 
-    $Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'wit/queries' -QueryStringParameters @{depth=1}
+	$Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'wit/queries' -QueryStringParameters @{depth=1}
 
-    foreach($value in $Result.Value)
-    {
-        if ($Value.isFolder -and $Value.hasChildren)
-        {
-            Write-Verbose "$Value.Name"
-            foreach($child in $value.Children)
-            {
-                if (-not $child.isFolder)
-                {
-                    $child
-                }
-            }
-        }
-    } 
+	foreach($value in $Result.Value)
+	{
+		if ($Value.isFolder -and $Value.hasChildren)
+		{
+			Write-Verbose "$Value.Name"
+			foreach($child in $value.Children)
+			{
+				if (-not $child.isFolder)
+				{
+					$child
+				}
+			}
+		}
+	}
 }
 
 function New-VstsGitRepository {
-    <#
-        .SYNOPSIS
-            Creates a new Git repository in the specified team project. 
-    #>
-    param(
+	<#
+		.SYNOPSIS
+			Creates a new Git repository in the specified team project.
+	#>
+	param(
 	[Parameter(Mandatory, ParameterSetname='Account')]
-	$AccountName, 
+	$AccountName,
 	[Parameter(Mandatory, ParameterSetname='Account')]
-	$User, 
+	$User,
 	[Parameter(Mandatory, ParameterSetname='Account')]
-	$Token, 
+	$Token,
 	[Parameter(Mandatory, ParameterSetname='Session')]
-	$Session, 
-    [Parameter(Mandatory=$true)]
+	$Session,
+	[Parameter(Mandatory=$true)]
 	$Project,
-    [Parameter(Mandatory=$true)]
-	$RepositoryName)  
+	[Parameter(Mandatory=$true)]
+	$RepositoryName)
 
 	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
@@ -422,121 +587,121 @@ function New-VstsGitRepository {
 		$Project = Get-VstsProject -Session $Session -Name $Project | Select -ExpandProperty Id
 	}
 
-    $Body = @{
-        Name = $RepositoryName
-        Project = @{
-            Id = $Project
-        }
-    } | ConvertTo-Json
+	$Body = @{
+		Name = $RepositoryName
+		Project = @{
+			Id = $Project
+		}
+	} | ConvertTo-Json
 
 	Invoke-VstsEndpoint -Session $Session -Method POST -Path 'git/repositories' -Body $Body
 }
 
 function Get-VstsGitRepository {
-    <#
-        .SYNOPSIS
-            Gets Git repositories in the specified team project. 
-    #>
-        param(
+	<#
+		.SYNOPSIS
+			Gets Git repositories in the specified team project.
+	#>
+		param(
 		[Parameter(Mandatory, ParameterSetname='Account')]
-		$AccountName, 
+		$AccountName,
 		[Parameter(Mandatory, ParameterSetname='Account')]
-		$User, 
+		$User,
 		[Parameter(Mandatory, ParameterSetname='Account')]
-		$Token, 
+		$Token,
 		[Parameter(Mandatory, ParameterSetname='Session')]
-		$Session, 
-        [Parameter(Mandatory=$true)]$Project)
+		$Session,
+		[Parameter(Mandatory=$true)]$Project)
 
 	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
 		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
 	}
 
-     $Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'git/repositories' -QueryStringParameters @{depth=1}
-     $Result.Value              
+	 $Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'git/repositories' -QueryStringParameters @{depth=1}
+	 $Result.Value
 }
 
 function Get-VstsCodePolicy {
-    <#
-        .SYNOPSIS
-            Get code policies for the specified project. 
-    #>
+	<#
+		.SYNOPSIS
+			Get code policies for the specified project.
+	#>
 
-    param(
-	    [Parameter(Mandatory, ParameterSetname='Account')]
-		$AccountName, 
+	param(
 		[Parameter(Mandatory, ParameterSetname='Account')]
-		$User, 
+		$AccountName,
 		[Parameter(Mandatory, ParameterSetname='Account')]
-		$Token, 
+		$User,
+		[Parameter(Mandatory, ParameterSetname='Account')]
+		$Token,
 		[Parameter(Mandatory, ParameterSetname='Session')]
-		$Session, 
-        [Parameter(Mandatory=$true)]$Project)
+		$Session,
+		[Parameter(Mandatory=$true)]$Project)
 
-		
+
 	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
 		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
 	}
-			  
-     $Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'policy/configurations' -ApiVersion '2.0-preview.1'
-     $Result.Value     
+
+	 $Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'policy/configurations' -ApiVersion '2.0-preview.1'
+	 $Result.Value
 }
 
 function New-VstsCodePolicy {
-    <#
-        .SYNOPSIS
-            Creates a new Code Policy configuration for the specified project.
-    #>
+	<#
+		.SYNOPSIS
+			Creates a new Code Policy configuration for the specified project.
+	#>
 
-    param(
+	param(
 		[Parameter(Mandatory, ParameterSetname='Account')]
-		$AccountName, 
+		$AccountName,
 		[Parameter(Mandatory, ParameterSetname='Account')]
-		$User, 
+		$User,
 		[Parameter(Mandatory, ParameterSetname='Account')]
-		$Token, 
+		$Token,
 		[Parameter(Mandatory, ParameterSetname='Session')]
-		$Session, 
-        [Parameter(Mandatory=$true)]
+		$Session,
+		[Parameter(Mandatory=$true)]
 		$Project,
-        [Guid]
+		[Guid]
 		$RepositoryId = [Guid]::Empty,
-        [int]
+		[int]
 		$MinimumReviewers,
-        [string[]]
+		[string[]]
 		$Branches)
 
-    $RepoId = $null
-    if ($RepositoryId -ne [Guid]::Empty)
-    {
-        $RepoId = $RepositoryId.ToString()   
-    }
+	$RepoId = $null
+	if ($RepositoryId -ne [Guid]::Empty)
+	{
+		$RepoId = $RepositoryId.ToString()
+	}
 
-    $scopes = foreach($branch in $Branches)
-    {
-        @{
-            repositoryId = $RepoId
-            refName = "refs/heads/$branch"
-            matchKind = "exact"
-        }
-    }
+	$scopes = foreach($branch in $Branches)
+	{
+		@{
+			repositoryId = $RepoId
+			refName = "refs/heads/$branch"
+			matchKind = "exact"
+		}
+	}
 
-    $Policy = @{
-        isEnabled = $true
-        isBlocking = $false
-        type = @{
-            id = 'fa4e907d-c16b-4a4c-9dfa-4906e5d171dd'
-        }
-        settings = @{
-            minimumApproverCount = $MinimumReviewers
-            creatorVoteCounts = $false
-            scope = @($scopes)
-        }
-    } | ConvertTo-Json -Depth 10
+	$Policy = @{
+		isEnabled = $true
+		isBlocking = $false
+		type = @{
+			id = 'fa4e907d-c16b-4a4c-9dfa-4906e5d171dd'
+		}
+		settings = @{
+			minimumApproverCount = $MinimumReviewers
+			creatorVoteCounts = $false
+			scope = @($scopes)
+		}
+	} | ConvertTo-Json -Depth 10
 
-    if ($PSCmdlet.ParameterSetName -eq 'Account')
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
 		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
 	}
@@ -545,17 +710,17 @@ function New-VstsCodePolicy {
 }
 
 function Get-VstsProcess {
-    <#
-        .SYNOPSIS
-            Gets team project processes.
-    #>
+	<#
+		.SYNOPSIS
+			Gets team project processes.
+	#>
 
-    param(
+	param(
 		[Parameter(Mandatory)]
 		$Session)
 
-     $Result = Invoke-VstsEndpoint -Session $Session -Path 'process/processes'
-     $Result.Value     
+	 $Result = Invoke-VstsEndpoint -Session $Session -Path 'process/processes'
+	 $Result.Value
 }
 
 <#
@@ -627,7 +792,7 @@ function Get-VstsBuild {
 <#
 	.SYNOPSIS
 		Gets a team project build definitions.
-	
+
 	.DESCRIPTION
 		This cmdlet will return a list of build definitions
 		or a single build definition if Id or Name is specified.
@@ -669,16 +834,16 @@ function Get-VstsBuild {
 #>
 function Get-VstsBuildDefinition {
 	[CmdletBinding(DefaultParameterSetName = 'Query')]
-    param(
+	param(
 		[Parameter(Mandatory = $true)]
 		$Session,
-		
+
 		[Parameter(Mandatory = $true)]
 		$Project,
-		
+
 		[Parameter(ParameterSetName = 'Id')]
 		[Int32] $Id,
-		
+
 		[Parameter(ParameterSetName = 'Query')]
 		[String] $Name,
 
@@ -728,14 +893,14 @@ function Test-Guid {
 
 function New-VstsBuildDefinition {
 	<#
-        .SYNOPSIS
-            Gets build definitions for the specified project.
-    #>
+		.SYNOPSIS
+			Gets build definitions for the specified project.
+	#>
 
 	param(
 		[Parameter(Mandatory)]
 		$Session,
-	    [Parameter(Mandatory=$true)]
+		[Parameter(Mandatory=$true)]
 		$Project,
 		[Parameter(Mandatory=$true)]
 		$Name,
@@ -746,7 +911,7 @@ function New-VstsBuildDefinition {
 		[Parameter(Mandatory=$true)]
 		$Queue,
 		[Parameter(Mandatory=$true)]
-		[PSCustomObject]$Repository 
+		[PSCustomObject]$Repository
 	)
 
 	if (-not (Test-Guid -Input $Queue))
@@ -782,7 +947,7 @@ function New-VstsBuildDefinition {
 			"vsVersion" = "latest"
 			"vsLocation" =  ""
 			"msbuildLocationMethod" = "version"
-			"msbuildVersion" = "latest" 
+			"msbuildVersion" = "latest"
 			"msbuildArchitecture" = "x86"
 			"msbuildLocation" = ""
 			"logProjectEvents" = "true"
@@ -852,13 +1017,13 @@ function New-VstsBuildDefinition {
 
 <#
 	.SYNOPSIS
-		Gets build queues for the collection.
+	Gets build queues for the collection.
 #>
 function Get-VstsBuildQueue {
 	[CmdletBinding(DefaultParameterSetName = 'Query')]
 	param
 	(
-		[Parameter(Mandatory)]
+		[Parameter(Mandatory = $True)]
 		$Session,
 
 		[Parameter(ParameterSetName = 'Id')]
@@ -892,54 +1057,85 @@ function Get-VstsBuildQueue {
 		-Path $Path `
 		-ApiVersion '2.0' `
 		@additionalInvokeParameters
-	
+
 	 return $Result.Value
-}
-
-function ConvertTo-VstsGitRepository {
-	<#
-		.SYNOPSIS
-			Converts a TFVC repository to a VSTS Git repository. 
-	#>
-    param(
-		[Parameter(Mandatory)]$Session,
-		[Parameter(Mandatory)]$TargetName, 
-		[Parameter(Mandatory)]$SourceFolder, 
-		[Parameter(Mandatory)]$ProjectName)
-
-	$GitCommand = Get-Command git 
-	if ($GitCommand -eq $null -or $GitCommand.CommandType -ne 'Application' -or $GitCommand.Name -ne 'git.exe')
-	{
-		throw "Git-tfs needs to be installed to use this command. See https://github.com/git-tfs/git-tfs. You can install with Chocolatey: cinst gittfs"
-	}
-
-	$GitTfsCommand = Get-Command git-tfs 
-	if ($GitTfsCommand -eq $null -or $GitTfsCommand.CommandType -ne 'Application' -or $GitTfsCommand.Name -ne 'git-tfs.exe')
-	{
-		throw "Git-tfs needs to be installed to use this command. See https://github.com/git-tfs/git-tfs. You can install with Chocolatey: cinst gittfs"
-	}
-
-    git tfs clone "https://$($Session.AccountName).visualstudio.com/defaultcollection" "$/$ProjectName/$SourceFolder" --branches=none
-
-    Push-Location (Split-Path $SourceFolder -Leaf)
-
-    New-VstsGitRepository -Session $Session -RepositoryName $TargetName -Project $ProjectName | Out-Null
-
-    git checkout -b develop
-    git remote add origin https://$($Session.AccountName).visualstudio.com/DefaultCollection/$ProjectName/_git/$TargetName
-    git push --all origin
-    git tfs cleanup
-
-    Pop-Location
-	Remove-Item (Split-Path $SourceFolder -Leaf) -Force
 }
 
 <#
 	.SYNOPSIS
-		Gets team project build artifacts.
+	Converts a TFVC repository to a VSTS Git repository.
+
+	.PARAMETER Session
+	The session object created by New-VstsSession.
+
+	.PARAMETER Project
+	The session object created by New-VstsSession.
+
+	.PARAMETER TargetName
+	The name of the VSTS Re
+
+	.PARAMETER SourceFolder
+	The session object created by New-VstsSession.
+#>
+function ConvertTo-VstsGitRepository {
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory = $True)]
+		$Session,
+
+		[Parameter(Mandatory = $True)]
+		$Project,
+
+		[Parameter(Mandatory = $True)]
+		$TargetName,
+
+		[Parameter(Mandatory = $True)]
+		$SourceFolder
+	)
+
+	$gitCommand = Get-Command git
+	if ($gitCommand -eq $null -or $gitCommand.CommandType -ne 'Application' -or $gitCommand.Name -ne 'git.exe')
+	{
+		throw "Git-tfs needs to be installed to use this command. See https://github.com/git-tfs/git-tfs. You can install with Chocolatey: cinst gittfs"
+	}
+
+	$gitTfsCommand = Get-Command git-tfs
+	if ($gitTfsCommand -eq $null -or $gitTfsCommand.CommandType -ne 'Application' -or $gitTfsCommand.Name -ne 'git-tfs.exe')
+	{
+		throw "Git-tfs needs to be installed to use this command. See https://github.com/git-tfs/git-tfs. You can install with Chocolatey: cinst gittfs"
+	}
+
+	git tfs clone "https://$($Session.AccountName).visualstudio.com/defaultcollection" "$/$Project/$SourceFolder" --branches=none
+
+	Push-Location -Path (Split-Path -Path $SourceFolder -Leaf)
+
+	$null = New-VstsGitRepository -Session $Session -RepositoryName $TargetName -Project $Project
+
+	git checkout -b develop
+	git remote add origin https://$($Session.AccountName).visualstudio.com/DefaultCollection/$Project/_git/$TargetName
+	git push --all origin
+	git tfs cleanup
+
+	Pop-Location
+	Remove-Item -Path (Split-Path -Path $SourceFolder -Leaf) -Force
+}
+
+<#
+	.SYNOPSIS
+	Gets team project build artifacts.
+
+	.PARAMETER Session
+	The session object created by New-VstsSession.
+
+	.PARAMETER Project
+	The name of the project to get the build artifacts from.
+
+	.PARAMETER BuildId
+	The BuildId of the artifacts to return.
 #>
 function Get-VstsBuildArtifact {
-
+	[CmdletBinding()]
 	param
 	(
 		[Parameter(Mandatory = $true)]
@@ -963,62 +1159,81 @@ function Get-VstsBuildArtifact {
 	return $Result.Value
 }
 
-function Get-VstsReleaseDefinition {
-    <#
-        .SYNOPSIS
-            Gets team project release definitions.
-    #>
+<#
+	.SYNOPSIS
+	Gets team project release definitions.
 
+	.PARAMETER Session
+	The session object created by New-VstsSession.
+
+	.PARAMETER Project
+	The name of the project to get the release from.
+
+	.PARAMETER DefinitionId
+	The DefinitionId of the release to return.
+#>
+function Get-VstsReleaseDefinition {
+	[CmdletBinding(DefaultParameterSetName = 'Query')]
 	param
 	(
-		[Parameter(Mandatory)]
+		[Parameter(Mandatory = $True)]
 		$Session,
-		[Parameter(Mandatory)]
-		$Project,
-		[Int32] $Id
+		
+		[Parameter(Mandatory = $True)]
+		[String] $Project,
+		
+		[Parameter(ParameterSetName = 'Query')]
+		[Int32] $DefinitionId
 	)
 
-	$Path = 'release/definitions'
-	if ($PSBoundParameters.ContainsKey('Id')) {
-		$Path = ('{0}/{1}' -f $Path, $Id)
+	$path = 'release/definitions'
+	$additionalInvokeParameters = @{}
+
+	if ($PSCmdlet.ParameterSetName -eq 'Query')
+	{
+		$additionalInvokeParameters = @{
+			QueryStringParameters = (Get-VSTSQueryStringParametersFromParams `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'DefinitionId')
+		}
 	}
 
-	$Result = Invoke-VstsEndpoint -Session $Session -Path $Path -Project $Project -ApiVersion '3.0-preview.2' -EndpointName 'vsrm'
-	
-	if ($Result.Value) {
-		$Result.Value
-	}
-	else 
-	{
-		$Result
-	}
+	$result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Path $path `
+		-Project $Project `
+		-ApiVersion '3.0-preview.2' `
+		-EndpointName 'vsrm' `
+		@additionalInvokeParameters
+
+	return $result.Value
 }
 
 <#
 	.SYNOPSIS
-		Gets team project release definitions.
+	Gets team project release definitions.
 
 	.PARAMETER Session
-		The session object created by New-VstsSession.
+	The session object created by New-VstsSession.
 
 	.PARAMETER Project
-		The name of the project to create the new release in.
+	The name of the project to get the release from.
 
 	.PARAMETER Id
-		The Id of the release to return.
+	The Id of the release to return.
 
 	.PARAMETER Top
-		The maximum number of releases to return.
+	The maximum number of releases to return.
 
 	.PARAMETER CreatedBy
-		The alias of the user that created the release.
-		
+	The alias of the user that created the release.
+
 	.PARAMETER StatusFilter
-		The releases that have this status.
+	The releases that have this status.
 
 	.PARAMETER QueryOrder
-		Gets the results in the defined order of created date
-		for releases.
+	Gets the results in the defined order of created date
+	for releases.
 #>
 function Get-VstsRelease {
 	[CmdletBinding(DefaultParameterSetName = 'Query')]
@@ -1051,7 +1266,7 @@ function Get-VstsRelease {
 		[String] $QueryOrder
 	)
 
-	$Path = 'release/releases'
+	$path = 'release/releases'
 	$additionalInvokeParameters = @{}
 
 	if ($PSCmdlet.ParameterSetName -eq 'Query')
@@ -1062,20 +1277,20 @@ function Get-VstsRelease {
 				-ParameterList 'DefinitionId','CreatedBy','StatusFilter','QueryOrder')
 			QueryStringExtParameters = Get-VSTSQueryStringParametersFromParams `
 				-BoundParameters $PSBoundParameters `
-				-ParameterList 'Top'
+				-ParameterList 'Expand'
 		}
 	}
 	else
 	{
 		if ($PSBoundParameters.ContainsKey('Id'))
 		{
-			$Path = ('{0}/{1}' -f $Path, $Id)
+			$path = ('{0}/{1}' -f $path, $Id)
 		}
 	}
 
-	$Result = Invoke-VstsEndpoint `
+	$result = Invoke-VstsEndpoint `
 		-Session $Session `
-		-Path $Path `
+		-Path $path `
 		-Project $Project `
 		-ApiVersion '3.0-preview.2' `
 		-EndpointName 'vsrm' `
@@ -1086,45 +1301,45 @@ function Get-VstsRelease {
 
 <#
 	.SYNOPSIS
-		Creates a new release for a project.
+	Creates a new release for a project.
 
 	.PARAMETER Session
-		The session object created by New-VstsSession.
+	The session object created by New-VstsSession.
 
 	.PARAMETER Project
-		The name of the project to create the new release in.
-		
+	The name of the project to create the new release in.
+
 	.PARAMETER DefinitionId
-		The release definition Id to create the new release for.
-		
+	The release definition Id to create the new release for.
+
 	.PARAMETER Description
-		The description of the new release.
+	The description of the new release.
 
 	.PARAMETER Artifacts
-		The artifacts that will be provided into the release.
+	The artifacts that will be provided into the release.
 
-		These must be in the format:
-		[
-			alias: {string},
-                 instanceReference: {
-                        name: {string},
-                        id: {string},
-                        sourceBranch: {string}
-				 }
-		]
+	These must be in the format:
+	[
+		alias: {string},
+			 instanceReference: {
+					name: {string},
+					id: {string},
+					sourceBranch: {string}
+			 }
+	]
 
 	.EXAMPLE
 	$vstsSession = New-VSTSSession `
 		-AccountName 'myvstsaccount' `
-		-User 'joe.bloggs@outlook.com' `
-		-Token 'hiwpxk5usaag6jslczsfbqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
-
-	Get-VstsBuild `
-		-Session $vstsSession `
+		-User 'joe.bloggs@fabrikam.com' `
+		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
 
 	New-VstsRelease `
 		-Session $vstsSession `
-		-Project 'pipeline' -verbose -DefinitionId 2 -Description 'Test from API' -Artifacts @( @{ Alias = 'WebApp-Master'; instanceReference = @{ id = 2217 } } )
+		-Project 'pipeline' `
+		-DefinitionId 2 `
+		-Description 'Test from API' `
+		-Artifacts @( @{ Alias = 'FabrikamCI'; instanceReference = @{ id = 2217 } } )
 	#>
 function New-VstsRelease {
 	param
@@ -1163,12 +1378,26 @@ function New-VstsRelease {
 
 <#
 	.SYNOPSIS
-	Helper function that takes an array of parameters
+	Helper function that takes an array of bound
+	parameters passed to the calling function
 	and an array of parameter names and creates a hash
-	table containing each parameter that appears in the
-	list.
+	table containing each parameter that appears in
+	the Bound Parameters and in the Parameters
+	List.
+
+	.PARAMETER BoundParameters
+	This is the content of the PSBoundParameters from
+	the calling function.
+
+	.PARAMETER ParameterList
+	This is the list of parameters to extract from the
+	bound parameters list.
+
+	.OUTPUTS
+	Hashtable containing all parameters from
+	BoundParameters that also appear in ParameterList.
 #>
-function Get-VSTSQueryStringParametersFromParams {
+function Get-VstsQueryStringParametersFromParams {
 	[CmdletBinding()]
 	[OutputType([Hashtable])]
 	param

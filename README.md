@@ -1,6 +1,6 @@
 # PowerShell Module for Accessing the Visual Studio Team Services (VSTS) REST API
 
-https://www.visualstudio.com/en-us/integrate/api/overview
+[Overview of integrating with Visual Studio Team Services](https://www.visualstudio.com/en-us/integrate/api/overview)
 
 ## Build Status
 
@@ -9,23 +9,31 @@ https://www.visualstudio.com/en-us/integrate/api/overview
 
 ## Cmdlets
 
+- Session
+  - New-VstsSession
 - Projects
-	- Get-VstsProject
-	- New-VstsProject
-	- Remove-VstsProject
-	- Get-VstsProcess
+  - Get-VstsProject
+  - New-VstsProject
+  - Remove-VstsProject
+  - Get-VstsProcess
 - Work
-	- Get-VstsWorkItem
-	- New-VstsWorkItem
-	- Get-VstsWorkItemQuery
+  - Get-VstsWorkItem
+  - New-VstsWorkItem
+  - Get-VstsWorkItemQuery
 - Build
-	- Get-VstsBuild
-	- Get-VstsBuildDefinition
-- Code	
-	- Policy
-		- Get-VstsCodePolicy
-		- New-VstsCodePolicy
-	- Git
-		- New-VstsGitRepository
-		- Get-VstsGitRepository
-		- ConvertTo-VstsGitRepository
+  - Get-VstsBuild
+  - Get-VstsBuildDefinition
+  - New-vstsBuild
+  - Get-VstsBuildArtifacts
+- Code
+  - Policy
+    - Get-VstsCodePolicy
+    - New-VstsCodePolicy
+  - Git
+    - New-VstsGitRepository
+    - Get-VstsGitRepository
+    - ConvertTo-VstsGitRepository
+- Release
+  - Get-VstsRelease
+  - Get-VstsReleaseDefinition
+  - New-VstsRelease
