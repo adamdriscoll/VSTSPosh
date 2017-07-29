@@ -1,4 +1,7 @@
-﻿function New-VstsSession {
+﻿# System.Web is not always loaded by default, so ensure it is loaded.
+Add-Type -AssemblyName System.Web
+
+function New-VstsSession {
 	param([Parameter()]$AccountName, 
           [Parameter(Mandatory=$true)]$User, 
           [Parameter(Mandatory=$true)]$Token,
@@ -17,15 +20,30 @@
 	}
 }
 
+<#
+	.SYNOPSIS
+		Invokes the VSTS REST API endpoint.
+
+	.PARAMETER EndpointName
+		Set an alternate VSTS endpoint to call.
+		This is required by API calls for to preview APIs that are not
+		yet available on the primary endpoint.
+
+	.PARAMETER Top
+		This will add the cause the '$top' parameter to the querystring
+#>
 function Invoke-VstsEndpoint {
     param(
-		  [Parameter(Mandatory=$true)]$Session, 
-          [Hashtable]$QueryStringParameters, 
-          [string]$Project,
+		  [Parameter(Mandatory=$true)]$Session,
+		  [Hashtable]$QueryStringParameters,
+		  [string]$Project,
           [Uri]$Path, 
           [string]$ApiVersion='1.0', 
           [ValidateSet('GET', 'PUT', 'POST', 'DELETE', 'PATCH')]$Method='GET',
-		  [string]$Body)
+		  [string]$Body,
+		  [string]$EndpointName,
+  		  [Hashtable]$QueryStringExtParameters
+		)
 
     $queryString = [System.Web.HttpUtility]::ParseQueryString([string]::Empty)
    
@@ -37,8 +55,20 @@ function Invoke-VstsEndpoint {
         }
     }
 
-    $queryString["api-version"] = $ApiVersion
-    $queryString = $queryString.ToString();
+	<#
+		These are query parmaeters that will be added prepended with a $.
+		They can't be passed in the QueryStringParameters.
+	#>
+	if ($QueryStringExtParameters -ne $null)
+    {
+        foreach($parameter in $QueryStringExtParameters.GetEnumerator())
+        {
+            $queryString['$' + $parameter.Key] = $parameter.Value
+        }
+    }
+
+	$queryString["api-version"] = $ApiVersion
+	$queryString = $queryString.ToString();
 
 	$authorization = Get-VstsAuthorization -User $Session.User -Token $Session.Token
 	if ([String]::IsNullOrEmpty($Session.AccountName))
@@ -47,7 +77,14 @@ function Invoke-VstsEndpoint {
 	}
 	else
 	{
-		$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.AccountName).visualstudio.com"
+		if ([String]::IsNullOrEmpty($EndpointName))
+		{
+			$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.AccountName).visualstudio.com"
+		}
+		else
+		{
+			$UriBuilder = New-Object System.UriBuilder -ArgumentList "$($Session.Scheme)://$($Session.AccountName).$EndpointName.visualstudio.com"
+		}
 	}
 	$Collection = $Session.Collection
 	
@@ -73,11 +110,28 @@ function Invoke-VstsEndpoint {
 			$ContentType = 'application/json-patch+json'
 		}
 
-		Invoke-RestMethod $Uri -Method $Method -ContentType $ContentType -Headers @{Authorization=$authorization} -Body $Body
+		$restResult = Invoke-RestMethod $Uri -Method $Method -ContentType $ContentType -Headers @{Authorization=$authorization} -Body $Body
 	}
 	else
 	{
-		Invoke-RestMethod $Uri -Method $Method -ContentType $ContentType -Headers @{Authorization=$authorization} 
+		$restResult = Invoke-RestMethod $Uri -Method $Method -ContentType $ContentType -Headers @{Authorization=$authorization} 
+	}
+
+	if ($restResult.Value)
+	{
+		return $restResult
+	}
+	else
+	{
+		<#
+			A Value property wasn't returned which usually occurs
+			if a specific record is requested from the API.
+			So create a new object with the value property set
+			to the returned object.
+		#>
+		return [psobject] @{
+			Value = $restResult
+		}
 	}
 }
 
@@ -504,37 +558,166 @@ function Get-VstsProcess {
      $Result.Value     
 }
 
+<#
+	.SYNOPSIS
+		Gets team project builds.
+
+	.DESCRIPTION
+		This cmdlet will return a list of builds
+		or a single build if Id is specified.
+
+		It can also be provided with additional query parmeters
+		to allow additional filters to be applied.
+#>
 function Get-VstsBuild {
-    <#
-        .SYNOPSIS
-            Gets team project builds.
-    #>
-
-    param(
+	[CmdletBinding(DefaultParameterSetName = 'Query')]
+	param
+	(
 		[Parameter(Mandatory)]
 		$Session,
-		[Parameter(Mandatory)]
-		$Project)
 
-     $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/builds' -Project $Project -ApiVersion '2.0'
-     $Result.Value     
+		[Parameter(Mandatory)]
+		$Project,
+
+		[Parameter(ParameterSetName = 'Id')]
+		[Int32] $Id,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[Int32] $Definitions,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[Int32] $Queues,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[Int32] $Top
+	)
+
+	$Path = 'build/builds'
+	$additionalInvokeParameters = @{}
+
+	if ($PSCmdlet.ParameterSetName -eq 'Query')
+	{
+		$additionalInvokeParameters = @{
+			QueryStringParameters = Get-VSTSQueryStringParametersFromParams `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'definitions','queues'
+			QueryStringExtParameters = Get-VSTSQueryStringParametersFromParams `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'top'
+		}
+	}
+	else
+	{
+		if ($PSBoundParameters.ContainsKey('Id'))
+		{
+			$Path = ('{0}/{1}' -f $Path, $Id)
+		}
+	}
+
+	$Result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Path $Path `
+		-Project $Project `
+		-ApiVersion '2.0' `
+		@additionalInvokeParameters
+
+	return $Result.Value
 }
 
+<#
+	.SYNOPSIS
+		Gets a team project build definitions.
+	
+	.DESCRIPTION
+		This cmdlet will return a list of build definitions
+		or a single build definition if Id or Name is specified.
+
+	.PARAMETER Session
+		The session object created by New-VstsSession.
+
+	.PARAMETER Project
+		The name of the project to create the new release in.
+
+	.PARAMETER Id
+		The id of the Build Definition to return.
+
+	.PARAMETER Name
+		The Name of the Build Definition to return.
+
+	.EXAMPLE
+		Get-VstsBuildDefinition `
+			-Session $vstsSession `
+			-Project 'FabrikamFiber'
+
+		Return all build definitions in the project FabrikamFiber.
+
+	.EXAMPLE
+		Get-VstsBuildDefinition `
+			-Session $vstsSession `
+			-Project 'FabrikamFiber' `
+			-Name 'Main-CI'
+
+		Returns the build definition with the name 'Main-CI'
+
+	.EXAMPLE
+		Get-VstsBuildDefinition `
+			-Session $vstsSession `
+			-Project 'FabrikamFiber' `
+			-Id 203
+
+		Returns the build definition with the Id 203.
+#>
 function Get-VstsBuildDefinition {
-    <#
-        .SYNOPSIS
-            Gets team project build definitions.
-    #>
-
+	[CmdletBinding(DefaultParameterSetName = 'Query')]
     param(
-		[Parameter(Mandatory)]
+		[Parameter(Mandatory = $true)]
 		$Session,
-		[Parameter(Mandatory)]
-		$Project)
+		
+		[Parameter(Mandatory = $true)]
+		$Project,
+		
+		[Parameter(ParameterSetName = 'Id')]
+		[Int32] $Id,
+		
+		[Parameter(ParameterSetName = 'Query')]
+		[String] $Name,
 
-     $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/definitions' -Project $Project -ApiVersion '2.0'
-     $Result.Value     
+		[Parameter(ParameterSetName = 'Query')]
+		[Int32] $Top
+	)
+
+	$Path = 'build/definitions'
+	$additionalInvokeParameters = @{}
+
+	if ($PSCmdlet.ParameterSetName -eq 'Query')
+	{
+		$additionalInvokeParameters = @{
+			QueryStringParameters = Get-VSTSQueryStringParametersFromParams `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'name'
+			QueryStringExtParameters = Get-VSTSQueryStringParametersFromParams `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'Top'
+		}
+	}
+	else
+	{
+		if ($PSBoundParameters.ContainsKey('Id'))
+		{
+			$Path = ('{0}/{1}' -f $Path, $Id)
+		}
+	}
+
+	$Result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Path $Path `
+		-Project $Project `
+		-ApiVersion '2.0' `
+		@additionalInvokeParameters
+
+	return $Result.Value
 }
+
 
 function Test-Guid {
 	param([Parameter(Mandatory)]$Input)
@@ -667,19 +850,50 @@ function New-VstsBuildDefinition {
 	Invoke-VstsEndpoint -Session $Session -Path 'build/definitions' -ApiVersion 2.0 -Method POST -Body $Body -Project $Project
 }
 
+<#
+	.SYNOPSIS
+		Gets build queues for the collection.
+#>
 function Get-VstsBuildQueue {
-	<#
-        .SYNOPSIS
-            Gets build definitions for the collection.
-    #>
-
-	param(
+	[CmdletBinding(DefaultParameterSetName = 'Query')]
+	param
+	(
 		[Parameter(Mandatory)]
-		$Session
-		)
+		$Session,
 
-	 $Result = Invoke-VstsEndpoint -Session $Session -Path 'build/queues' -ApiVersion 2.0
-     $Result.Value   
+		[Parameter(ParameterSetName = 'Id')]
+		[Int32] $Id,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[String] $Name
+	)
+
+	$Path = 'build/queues'
+	$additionalInvokeParameters = @{}
+
+	if ($PSCmdlet.ParameterSetName -eq 'Query')
+	{
+		$additionalInvokeParameters = @{
+			QueryStringParameters = Get-VSTSQueryStringParametersFromParams `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'name'
+		}
+	}
+	else
+	{
+		if ($PSBoundParameters.ContainsKey('Id'))
+		{
+			$Path = ('{0}/{1}' -f $Path, $Id)
+		}
+	}
+
+	$Result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Path $Path `
+		-ApiVersion '2.0' `
+		@additionalInvokeParameters
+	
+	 return $Result.Value
 }
 
 function ConvertTo-VstsGitRepository {
@@ -718,4 +932,261 @@ function ConvertTo-VstsGitRepository {
 
     Pop-Location
 	Remove-Item (Split-Path $SourceFolder -Leaf) -Force
+}
+
+<#
+	.SYNOPSIS
+		Gets team project build artifacts.
+#>
+function Get-VstsBuildArtifact {
+
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		$Session,
+
+		[Parameter(Mandatory = $true)]
+		$Project,
+
+		[Parameter(Mandatory = $true)]
+		[Int32] $BuildId
+	)
+
+	$Path = ('build/builds/{0}/artifacts' -f $BuildId)
+
+	$Result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Path $Path `
+		-Project $Project `
+		-ApiVersion '2.0'
+
+	return $Result.Value
+}
+
+function Get-VstsReleaseDefinition {
+    <#
+        .SYNOPSIS
+            Gets team project release definitions.
+    #>
+
+	param
+	(
+		[Parameter(Mandatory)]
+		$Session,
+		[Parameter(Mandatory)]
+		$Project,
+		[Int32] $Id
+	)
+
+	$Path = 'release/definitions'
+	if ($PSBoundParameters.ContainsKey('Id')) {
+		$Path = ('{0}/{1}' -f $Path, $Id)
+	}
+
+	$Result = Invoke-VstsEndpoint -Session $Session -Path $Path -Project $Project -ApiVersion '3.0-preview.2' -EndpointName 'vsrm'
+	
+	if ($Result.Value) {
+		$Result.Value
+	}
+	else 
+	{
+		$Result
+	}
+}
+
+<#
+	.SYNOPSIS
+		Gets team project release definitions.
+
+	.PARAMETER Session
+		The session object created by New-VstsSession.
+
+	.PARAMETER Project
+		The name of the project to create the new release in.
+
+	.PARAMETER Id
+		The Id of the release to return.
+
+	.PARAMETER Top
+		The maximum number of releases to return.
+
+	.PARAMETER CreatedBy
+		The alias of the user that created the release.
+		
+	.PARAMETER StatusFilter
+		The releases that have this status.
+
+	.PARAMETER QueryOrder
+		Gets the results in the defined order of created date
+		for releases.
+#>
+function Get-VstsRelease {
+	[CmdletBinding(DefaultParameterSetName = 'Query')]
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		$Session,
+
+		[Parameter(Mandatory = $true)]
+		$Project,
+
+		[Parameter(ParameterSetName = 'Id')]
+		[Int32] $Id,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[Int32] $DefinitionId,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[Int32] $Top,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[String] $CreatedBy,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[ValidateSet('Draft','Active','Abandoned')]
+		[String] $StatusFilter,
+
+		[Parameter(ParameterSetName = 'Query')]
+		[ValidateSet('ascending','descending')]
+		[String] $QueryOrder
+	)
+
+	$Path = 'release/releases'
+	$additionalInvokeParameters = @{}
+
+	if ($PSCmdlet.ParameterSetName -eq 'Query')
+	{
+		$additionalInvokeParameters = @{
+			QueryStringParameters = (Get-VSTSQueryStringParametersFromParams `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'DefinitionId','CreatedBy','StatusFilter','QueryOrder')
+			QueryStringExtParameters = Get-VSTSQueryStringParametersFromParams `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'Top'
+		}
+	}
+	else
+	{
+		if ($PSBoundParameters.ContainsKey('Id'))
+		{
+			$Path = ('{0}/{1}' -f $Path, $Id)
+		}
+	}
+
+	$Result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Path $Path `
+		-Project $Project `
+		-ApiVersion '3.0-preview.2' `
+		-EndpointName 'vsrm' `
+		@additionalInvokeParameters
+
+	return $Result.Value
+}
+
+<#
+	.SYNOPSIS
+		Creates a new release for a project.
+
+	.PARAMETER Session
+		The session object created by New-VstsSession.
+
+	.PARAMETER Project
+		The name of the project to create the new release in.
+		
+	.PARAMETER DefinitionId
+		The release definition Id to create the new release for.
+		
+	.PARAMETER Description
+		The description of the new release.
+
+	.PARAMETER Artifacts
+		The artifacts that will be provided into the release.
+
+		These must be in the format:
+		[
+			alias: {string},
+                 instanceReference: {
+                        name: {string},
+                        id: {string},
+                        sourceBranch: {string}
+				 }
+		]
+
+	.EXAMPLE
+	$vstsSession = New-VSTSSession `
+		-AccountName 'myvstsaccount' `
+		-User 'joe.bloggs@outlook.com' `
+		-Token 'hiwpxk5usaag6jslczsfbqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
+	Get-VstsBuild `
+		-Session $vstsSession `
+
+	New-VstsRelease `
+		-Session $vstsSession `
+		-Project 'pipeline' -verbose -DefinitionId 2 -Description 'Test from API' -Artifacts @( @{ Alias = 'WebApp-Master'; instanceReference = @{ id = 2217 } } )
+	#>
+function New-VstsRelease {
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		$Session,
+
+		[Parameter(Mandatory = $true)]
+		$Project,
+
+		[Parameter(Mandatory = $true)]
+		[Int32] $DefinitionId,
+
+		[Parameter(Mandatory = $true)]
+		[String] $Description,
+
+		[Parameter(Mandatory = $true)]
+		[HashTable[]] $Artifacts
+	)
+
+	$Body = @{
+		definitionId = $DefinitionId
+		description = $Description
+		artifacts = $Artifacts
+	} | ConvertTo-Json -Depth 20
+
+	Invoke-VstsEndpoint `
+		-Session $Session `
+		-Project $Project `
+		-Path 'release/releases' `
+		-ApiVersion '3.0-preview.2' `
+		-EndpointName 'vsrm' `
+		-Method POST `
+		-Body $Body
+}
+
+<#
+	.SYNOPSIS
+	Helper function that takes an array of parameters
+	and an array of parameter names and creates a hash
+	table containing each parameter that appears in the
+	list.
+#>
+function Get-VSTSQueryStringParametersFromParams {
+	[CmdletBinding()]
+	[OutputType([Hashtable])]
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		$BoundParameters,
+
+		[Parameter(Mandatory = $true)]
+		[Array] $ParameterList
+	)
+
+	$result = @{}
+	foreach ($parameter in $ParameterList)
+	{
+		if ($BoundParameters.ContainsKey($parameter))
+		{
+			$result += @{ $parameter = $BoundParameters[$parameter] }
+		}
+	}
+	return $result
 }
