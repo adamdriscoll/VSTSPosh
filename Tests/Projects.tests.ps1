@@ -9,7 +9,7 @@ function New-ProjectName
 
 Import-Module -Name (Join-Path $PSScriptRoot '..\VSTS.psm1') -Force
 
-Describe "Projects" -Tags Integration {
+Describe 'Projects' -Tags 'Integration' {
 	$Script:Session = New-VSTSSession -AccountName $account -User $userName -Token $token
 
 	Context "Project doesn't exist" {
