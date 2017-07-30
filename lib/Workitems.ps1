@@ -130,7 +130,7 @@ function Get-VstsWorkItem
 		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
 
 	New-VstsWorkItem `
-		-Session $session `
+		-Session $vstsSession `
 		-Project 'FabrikamFiber' `
 		-WorkItemType 'User Story' `
 		-PropertyHashtable @{ 'System.Title' = 'Add support for creating new work item' }
