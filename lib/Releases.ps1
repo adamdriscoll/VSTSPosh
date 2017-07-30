@@ -2,6 +2,15 @@
 	.SYNOPSIS
 	Gets team project release definitions.
 
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
+
 	.PARAMETER Session
 	The session object created by New-VstsSession.
 
@@ -13,10 +22,19 @@
 #>
 function Get-VstsReleaseDefinition
 {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory = $True)]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
 		[Parameter(Mandatory = $True)]
@@ -25,6 +43,11 @@ function Get-VstsReleaseDefinition
 		[Parameter()]
 		[Int32] $DefinitionId
 	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
 
 	$path = 'release/definitions'
 
@@ -48,6 +71,15 @@ function Get-VstsReleaseDefinition
 <#
 	.SYNOPSIS
 	Gets team project release definitions.
+
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
 
 	.PARAMETER Session
 	The session object created by New-VstsSession.
@@ -73,10 +105,19 @@ function Get-VstsReleaseDefinition
 #>
 function Get-VstsRelease
 {
-	[CmdletBinding(DefaultParameterSetName = 'Query')]
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
 		[Parameter(Mandatory = $true)]
@@ -103,6 +144,11 @@ function Get-VstsRelease
 		[String] $QueryOrder
 	)
 
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
+
 	$path = 'release/releases'
 	$additionalInvokeParameters = @{}
 
@@ -115,10 +161,10 @@ function Get-VstsRelease
 		$additionalInvokeParameters = @{
 			QueryStringParameters    = (Get-VstsQueryStringParametersFromBound `
 					-BoundParameters $PSBoundParameters `
-					-ParameterList 'DefinitionId', 'CreatedBy', 'StatusFilter', 'QueryOrder')
+					-ParameterList 'definitionId', 'createdBy', 'statusFilter', 'queryOrder')
 			QueryStringExtParameters = Get-VstsQueryStringParametersFromBound `
 				-BoundParameters $PSBoundParameters `
-				-ParameterList 'Expand'
+				-ParameterList 'top'
 		}
 	}
 
@@ -136,6 +182,15 @@ function Get-VstsRelease
 <#
 	.SYNOPSIS
 	Creates a new release for a project.
+
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
 
 	.PARAMETER Session
 	The session object created by New-VstsSession.
@@ -178,9 +233,19 @@ function Get-VstsRelease
 	#>
 function New-VstsRelease
 {
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
 		[Parameter(Mandatory = $true)]
@@ -195,6 +260,11 @@ function New-VstsRelease
 		[Parameter(Mandatory = $true)]
 		[HashTable[]] $Artifacts
 	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
 
 	$Body = @{
 		definitionId = $DefinitionId

@@ -2,6 +2,15 @@
 	.SYNOPSIS
 	Get work items from VSTS.
 
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
+
 	.PARAMETER Session
 	The session object created by New-VstsSession.
 
@@ -22,30 +31,48 @@
 #>
 function Get-VstsWorkItem
 {
-	[CmdletBinding(DefaultParameterSetName = 'Query')]
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory = $True)]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
-		[Parameter(Mandatory = $True, ParameterSetName = 'Id')]
+		[Parameter()]
 		[String] $Id,
 
-		[Parameter(Mandatory = $True, ParameterSetName = 'Query')]
+		[Parameter()]
 		[String[]] $Ids,
 
-		[Parameter(ParameterSetName = 'Query')]
+		[Parameter()]
 		[String] $AsOf,
 
-		[Parameter(ParameterSetName = 'Query')]
+		[Parameter()]
 		[ValidateSet('All', 'Relations', 'None')]
 		[String] $Expand
 	)
 
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
+
 	$path = 'wit/workitems'
 	$additionalInvokeParameters = @{}
 
-	if ($PSCmdlet.ParameterSetName -eq 'Query')
+	if ($PSBoundParameters.ContainsKey('Id'))
+	{
+		$path = ('{0}/{1}' -f $path, $Id)
+	}
+	else
 	{
 		# Convert the Ids into a comma delimited string
 		$PSBoundParameters['Ids'] = ($PSBoundParameters['Ids'] -join ',')
@@ -57,13 +84,6 @@ function Get-VstsWorkItem
 			QueryStringExtParameters = Get-VstsQueryStringParametersFromBound `
 				-BoundParameters $PSBoundParameters `
 				-ParameterList 'expand'
-		}
-	}
-	else
-	{
-		if ($PSBoundParameters.ContainsKey('Id'))
-		{
-			$path = ('{0}/{1}' -f $path, $Id)
 		}
 	}
 
@@ -79,6 +99,15 @@ function Get-VstsWorkItem
 <#
 	.SYNOPSIS
 	Create new work items in VSTS
+
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
 
 	.PARAMETER Session
 	The session object created by New-VstsSession.
@@ -113,9 +142,19 @@ function Get-VstsWorkItem
 #>
 function New-VstsWorkItem
 {
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory = $True)]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
 		[Parameter(Mandatory = $True)]
@@ -127,6 +166,11 @@ function New-VstsWorkItem
 		[Parameter(Mandatory = $True)]
 		[Hashtable]	$PropertyHashtable
 	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
 
 	$path = ('wit/workitems/${0}' -f $WorkItemType)
 
@@ -159,31 +203,54 @@ function New-VstsWorkItem
 <#
 	.SYNOPSIS
 	Returns a list of work item queries from the specified folder.
+
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
+
+	.PARAMETER Session
+	The session object created by New-VstsSession.
 #>
 function Get-VstsWorkItemQuery
 {
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory, ParameterSetname = 'Account')]
-		$AccountName,
-		[Parameter(Mandatory, ParameterSetname = 'Account')]
-		$User,
-		[Parameter(Mandatory, ParameterSetname = 'Account')]
-		$Token,
-		[Parameter(Mandatory, ParameterSetname = 'Session')]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
-		[Parameter(Mandatory = $true)]$Project,
-		$FolderPath
+
+		[Parameter(Mandatory = $true)]
+		[String] $Project
 	)
 
 	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
-		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
 	}
 
-	$Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'wit/queries' -QueryStringParameters @{depth = 1}
+	$path = 'wit/queries'
 
-	foreach ($value in $Result.Value)
+	$result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Project $Project `
+		-Path $path `
+		-QueryStringParameters @{ depth = 1 }
+
+	foreach ($value in $result.Value)
 	{
 		if ($Value.isFolder -and $Value.hasChildren)
 		{
