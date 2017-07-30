@@ -2,6 +2,15 @@
 	.SYNOPSIS
 	Gets Git repositories in the specified team project.
 
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
+
 	.PARAMETER Session
 	The session object created by New-VstsSession.
 
@@ -40,10 +49,19 @@
 #>
 function Get-VstsGitRepository
 {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory = $True)]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
 		[Parameter(Mandatory = $true)]
@@ -52,6 +70,11 @@ function Get-VstsGitRepository
 		[Parameter()]
 		[String] $Repository
 	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
 
 	$path = 'git/repositories'
 
@@ -71,6 +94,15 @@ function Get-VstsGitRepository
 <#
 	.SYNOPSIS
 	Creates a new Git repository in the specified team project.
+
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
 
 	.PARAMETER Session
 	The session object created by New-VstsSession.
@@ -97,9 +129,19 @@ function Get-VstsGitRepository
 #>
 function New-VstsGitRepository
 {
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory = $True)]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
 		[Parameter(Mandatory = $True)]
@@ -108,6 +150,11 @@ function New-VstsGitRepository
 		[Parameter(Mandatory = $True)]
 		$RepositoryName
 	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
 
 	$path = 'git/repositories'
 
@@ -137,6 +184,15 @@ function New-VstsGitRepository
 	.SYNOPSIS
 	Get code policy configurations for the specified project.
 
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
+
 	.PARAMETER Session
 	The session object created by New-VstsSession.
 
@@ -154,25 +210,39 @@ function New-VstsGitRepository
 #>
 function Get-VstsCodePolicyConfiguration
 {
-	[CmdletBinding(DefaultParameterSetName = 'Query')]
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory = $true)]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
 		[Parameter(Mandatory = $true)]
 		[String] $Project,
 
-		[Parameter(ParameterSetName = 'Id')]
+		[Parameter()]
 		[String] $Id,
 
-		[Parameter(ParameterSetName = 'Query')]
+		[Parameter()]
 		[Int32] $Top,
 
-		[Parameter(ParameterSetName = 'Query')]
+		[Parameter()]
 		[Int32] $Skip
 
 	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
 
 	$path = 'policy/configurations'
 	$additionalInvokeParameters = @{}
@@ -207,6 +277,15 @@ function Get-VstsCodePolicyConfiguration
 	.SYNOPSIS
 	Creates a new Code Policy Configuration for the specified project.
 
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
+
 	.PARAMETER Session
 	The session object created by New-VstsSession.
 
@@ -224,10 +303,19 @@ function Get-VstsCodePolicyConfiguration
 #>
 function New-VstsCodePolicyConfiguration
 {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory = $True)]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
 		[Parameter(Mandatory = $True)]
@@ -242,6 +330,11 @@ function New-VstsCodePolicyConfiguration
 		[Parameter(Mandatory = $True)]
 		[String[]] $Branches
 	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
 
 	$path = 'policy/configurations'
 
@@ -289,6 +382,15 @@ function New-VstsCodePolicyConfiguration
 	.SYNOPSIS
 	Converts a TFVC repository to a VSTS Git repository.
 
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
+
 	.PARAMETER Session
 	The session object created by New-VstsSession.
 
@@ -303,10 +405,19 @@ function New-VstsCodePolicyConfiguration
 #>
 function ConvertTo-VstsGitRepository
 {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
 	param
 	(
-		[Parameter(Mandatory = $True)]
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
 		[Parameter(Mandatory = $True)]
@@ -318,6 +429,11 @@ function ConvertTo-VstsGitRepository
 		[Parameter(Mandatory = $True)]
 		$SourceFolder
 	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
 
 	$gitCommand = Get-Command git
 	if ($null -eq $gitCommand -or $gitCommand.CommandType -ne 'Application' -or $gitCommand.Name -ne 'git.exe')
