@@ -27,8 +27,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="CHANGELOG.md" />
     <Compile Include="CreateModuleManifest.ps1" />
     <Compile Include="InvokeTests.ps1" />
+    <Compile Include="Lib\Builds.ps1" />
+    <Compile Include="Lib\Code.ps1" />
+    <Compile Include="Lib\Projects.ps1" />
+    <Compile Include="Lib\Releases.ps1" />
+    <Compile Include="Lib\Workitems.ps1" />
     <Compile Include="LICENSE" />
     <Compile Include="PublishModule.ps1" />
     <Compile Include="Tests\Builds.tests.ps1" />
