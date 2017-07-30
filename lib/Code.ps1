@@ -12,6 +12,7 @@
 	The id or name of the repository.
 
 	.EXAMPLE
+	>
 	$vstsSession = New-VSTSSession `
 		-AccountName 'myvstsaccount' `
 		-User 'joe.bloggs@fabrikam.com' `
@@ -24,6 +25,7 @@
 	Get a list of Git repositories in the FabrikamFiber project.
 
 	.EXAMPLE
+	>
 	$vstsSession = New-VSTSSession `
 		-AccountName 'myvstsaccount' `
 		-User 'joe.bloggs@fabrikam.com' `
@@ -80,6 +82,7 @@ function Get-VstsGitRepository
 	The name of the repository to create.
 
 	.EXAMPLE
+	>
 	$vstsSession = New-VSTSSession `
 		-AccountName 'myvstsaccount' `
 		-User 'joe.bloggs@fabrikam.com' `

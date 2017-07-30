@@ -96,6 +96,7 @@ function Get-VstsWorkItem
 	with a '.' when submitted to the API.
 
 	.EXAMPLE
+	>
 	$vstsSession = New-VSTSSession `
 		-AccountName 'myvstsaccount' `
 		-User 'joe.bloggs@fabrikam.com' `

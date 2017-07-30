@@ -163,6 +163,7 @@ function Get-VstsRelease
 	]
 
 	.EXAMPLE
+	>
 	$vstsSession = New-VSTSSession `
 		-AccountName 'myvstsaccount' `
 		-User 'joe.bloggs@fabrikam.com' `

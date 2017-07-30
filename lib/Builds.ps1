@@ -1,101 +1,5 @@
 <#
 	.SYNOPSIS
-	Gets team project builds.
-
-	.DESCRIPTION
-	This cmdlet will return a list of builds
-	or a single build if Id is specified.
-
-	It can also be provided with additional query parmeters
-	to allow additional filters to be applied.
-
-	.PARAMETER AccountName
-	The name of the VSTS account to use.
-
-	.PARAMETER User
-	This user name to authenticate to VSTS.
-
-	.PARAMETER Token
-	This personal access token to use to authenticate to VSTS.
-
-	.PARAMETER Session
-	The session object created by New-VstsSession.
-
-	.PARAMETER Project
-	The name of the project to get the builds from.
-#>
-function Get-VstsBuild
-{
-	[CmdletBinding(DefaultParameterSetName = 'Account')]
-	param
-	(
-		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
-		[String] $AccountName,
-
-		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
-		[String] $User,
-
-		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
-		[String] $Token,
-
-		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
-		$Session,
-
-		[Parameter(Mandatory = $True)]
-		[String] $Project,
-
-		[Parameter(ParameterSetName = 'Id')]
-		[Int32] $Id,
-
-		[Parameter(ParameterSetName = 'Query')]
-		[Int32] $Definitions,
-
-		[Parameter(ParameterSetName = 'Query')]
-		[Int32] $Queues,
-
-		[Parameter(ParameterSetName = 'Query')]
-		[Int32] $Top
-	)
-
-	if ($PSCmdlet.ParameterSetName -eq 'Account')
-	{
-		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
-	}
-
-	$path = 'build/builds'
-	$additionalInvokeParameters = @{}
-
-	if ($PSCmdlet.ParameterSetName -eq 'Query')
-	{
-		$additionalInvokeParameters = @{
-			QueryStringParameters    = Get-VstsQueryStringParametersFromBound `
-				-BoundParameters $PSBoundParameters `
-				-ParameterList 'definitions', 'queues'
-			QueryStringExtParameters = Get-VstsQueryStringParametersFromBound `
-				-BoundParameters $PSBoundParameters `
-				-ParameterList 'top'
-		}
-	}
-	else
-	{
-		if ($PSBoundParameters.ContainsKey('Id'))
-		{
-			$path = ('{0}/{1}' -f $path, $Id)
-		}
-	}
-
-	$Result = Invoke-VstsEndpoint `
-		-Session $Session `
-		-Project $Project `
-		-Path $path `
-		-ApiVersion '2.0' `
-		@additionalInvokeParameters
-
-	return $Result.Value
-}
-
-<#
-	.SYNOPSIS
 	Gets a team project build definitions.
 
 	.DESCRIPTION
@@ -127,6 +31,12 @@ function Get-VstsBuild
 	The maximum number of Build Definitions to return.
 
 	.EXAMPLE
+	>
+	$vstsSession = New-VSTSSession `
+		-AccountName 'myvstsaccount' `
+		-User 'joe.bloggs@fabrikam.com' `
+		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
 	Get-VstsBuildDefinition `
 		-Session $vstsSession `
 		-Project 'FabrikamFiber'
@@ -134,6 +44,12 @@ function Get-VstsBuild
 	Return all build definitions in the project FabrikamFiber.
 
 	.EXAMPLE
+	>
+	$vstsSession = New-VSTSSession `
+		-AccountName 'myvstsaccount' `
+		-User 'joe.bloggs@fabrikam.com' `
+		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
 	Get-VstsBuildDefinition `
 		-Session $vstsSession `
 		-Project 'FabrikamFiber' `
@@ -142,6 +58,12 @@ function Get-VstsBuild
 	Returns the build definition with the name 'Main-CI'
 
 	.EXAMPLE
+	>
+	$vstsSession = New-VSTSSession `
+		-AccountName 'myvstsaccount' `
+		-User 'joe.bloggs@fabrikam.com' `
+		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
 	Get-VstsBuildDefinition `
 		-Session $vstsSession `
 		-Project 'FabrikamFiber' `
@@ -169,13 +91,13 @@ function Get-VstsBuildDefinition
 		[Parameter(Mandatory = $true)]
 		[String] $Project,
 
-		[Parameter(ParameterSetName = 'Id')]
+		[Parameter()]
 		[Int32] $Id,
 
-		[Parameter(ParameterSetName = 'Query')]
+		[Parameter()]
 		[String] $Name,
 
-		[Parameter(ParameterSetName = 'Query')]
+		[Parameter()]
 		[Int32] $Top
 	)
 
@@ -187,7 +109,11 @@ function Get-VstsBuildDefinition
 	$path = 'build/definitions'
 	$additionalInvokeParameters = @{}
 
-	if ($PSCmdlet.ParameterSetName -eq 'Query')
+	if ($PSBoundParameters.ContainsKey('Id'))
+	{
+		$path = ('{0}/{1}' -f $path, $Id)
+	}
+	else
 	{
 		$additionalInvokeParameters = @{
 			QueryStringParameters    = Get-VstsQueryStringParametersFromBound `
@@ -196,13 +122,6 @@ function Get-VstsBuildDefinition
 			QueryStringExtParameters = Get-VstsQueryStringParametersFromBound `
 				-BoundParameters $PSBoundParameters `
 				-ParameterList 'Top'
-		}
-	}
-	else
-	{
-		if ($PSBoundParameters.ContainsKey('Id'))
-		{
-			$path = ('{0}/{1}' -f $path, $Id)
 		}
 	}
 
@@ -218,7 +137,7 @@ function Get-VstsBuildDefinition
 
 <#
 	.SYNOPSIS
-	Gets build definitions for the specified project.
+	Create a new  build definition for the specified project.
 
 	.PARAMETER AccountName
 	The name of the VSTS account to use.
@@ -231,6 +150,47 @@ function Get-VstsBuildDefinition
 
 	.PARAMETER Session
 	The session object created by New-VstsSession.
+
+	.PARAMETER Project
+	The name of the project to create the build in.
+
+	.PARAMETER Name
+	The name of build definition to create.
+
+	.PARAMETER DisplayName
+	The display name of build definition to create.
+
+	.PARAMETER Comment
+	The comment to record against the initial build definition
+	creation.
+
+	.PARAMETER Queue
+	The name or id of the build queue Queue to use to build
+	the defnition.
+
+	.PARAMETER Repository
+	The repository object retrieved using Get-VstsGitRepository
+	to link to the build
+
+	.EXAMPLE
+	>
+	$vstsSession = New-VSTSSession `
+		-AccountName 'myvstsaccount' `
+		-User 'joe.bloggs@fabrikam.com' `
+		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
+	$repository = Get-VstsGitRepository `
+		-Session $vstsSession `
+		-Project 'FabrikamFiber' `
+		-Repository 'FabrikamFiber'
+
+	New-VstsBuildDefinition `
+		-Session $vstsSession `
+		-Project 'FabrikamFiber' `
+		-Name 'FabrikamFiber-CIX' `
+		-DisplayName 'Build Fabrikam Fiber' `
+		-Queue 'Hosted VS2017' `
+		-Repository $repository
 #>
 function New-VstsBuildDefinition
 {
@@ -262,7 +222,7 @@ function New-VstsBuildDefinition
 		[String] $Comment,
 
 		[Parameter(Mandatory = $true)]
-		[String] $Queue,
+		$Queue,
 
 		[Parameter(Mandatory = $true)]
 		[PSCustomObject] $Repository
@@ -275,9 +235,13 @@ function New-VstsBuildDefinition
 
 	$path = 'build/definitions'
 
-	if (-not (Test-Guid -Input $Queue))
+	if ($Queue -is [String])
 	{
-		$Queue = (Get-VstsBuildQueue -Session $Session | Where-Object -Property Name -EQ $Queue).Id
+		$queueId = (Get-VstsBuildQueue -Session $Session -Name $Queue).Id
+	}
+	else
+	{
+		$queueId = $Queue
 	}
 
 	$body = @{
@@ -285,7 +249,7 @@ function New-VstsBuildDefinition
 		type         = "build"
 		quality      = "definition"
 		queue        = @{
-			id = $Queue
+			id = $queueId
 		}
 		build        = @(
 			@{
@@ -373,6 +337,7 @@ function New-VstsBuildDefinition
 		"comment"    = $Comment
 	} | ConvertTo-Json -Depth 20
 
+	Write-Verbose -Verbose -Message ($body | OUt-String)
 	$result = Invoke-VstsEndpoint `
 		-Session $Session `
 		-Project $Project `
@@ -382,6 +347,141 @@ function New-VstsBuildDefinition
 		-Body $body
 
 	return $result.Value
+}
+
+<#
+	.SYNOPSIS
+	Gets team project builds.
+
+	.DESCRIPTION
+	This cmdlet will return a list of builds
+	or a single build if Id is specified.
+
+	It can also be provided with additional query parmeters
+	to allow additional filters to be applied.
+
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
+
+	.PARAMETER Session
+	The session object created by New-VstsSession.
+
+	.PARAMETER Project
+	The name of the project to get the builds from.
+
+	.PARAMETER Id
+	The Id of the build to retrieve.
+
+	.PARAMETER Definitions
+	Get builds matching any of these definitions.
+
+	.PARAMETER Queues
+	Get builds in any of these queues.
+
+	.PARAMETER RequestedFor
+	Get build requested by this user.
+
+	.PARAMETER ReasonFilter
+	Gets builds that were created for this reason.
+
+	.PARAMETER ResultFilter
+	Gets builds that have this result.
+
+	.PARAMETER StatusFilter
+	Gets builds that were match this status.
+
+	.PARAMETER Top
+	The maximum number of builds to return.
+#>
+function Get-VstsBuild
+{
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
+	param
+	(
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
+		$Session,
+
+		[Parameter(Mandatory = $True)]
+		[String] $Project,
+
+		[Parameter()]
+		[Int32] $Id,
+
+		[Parameter()]
+		[Int32[]] $Definitions,
+
+		[Parameter()]
+		[Int32[]] $Queues,
+
+		[Parameter()]
+		[String] $RequestedFor,
+
+		[Parameter()]
+		[ValidateSet('Manual', 'IndividualCI', 'BatchedCI', 'Schedule', 'UserCreated', 'ValidateShelveset', 'CheckInShelveset', 'Triggered', 'All')]
+		[String] $ReasonFilter,
+
+		[Parameter()]
+		[ValidateSet('Succeeded', 'PartiallySucceeded', 'Failed', 'Canceled')]
+		[String] $ResultFilter,
+
+		[Parameter()]
+		[ValidateSet('InProgress', 'Completed', 'Cancelling', 'Postponed', 'NotStarted', 'All')]
+		[String] $StatusFilter,
+
+		[Parameter()]
+		[Int32] $Top
+	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
+
+	$path = 'build/builds'
+	$additionalInvokeParameters = @{}
+
+	if ($PSBoundParameters.ContainsKey('Id'))
+	{
+		$path = ('{0}/{1}' -f $path, $Id)
+	}
+	else
+	{
+		$PSBoundParameters['Definitions'] = ($PSBoundParameters['Definitions'] -join ',')
+		$PSBoundParameters['Queues'] = ($PSBoundParameters['Queues'] -join ',')
+
+		$additionalInvokeParameters = @{
+			QueryStringParameters    = Get-VstsQueryStringParametersFromBound `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'definitions', 'queues', 'requestedFor', 'reasonFilter', 'resultFilter', 'statusFilter'
+			QueryStringExtParameters = Get-VstsQueryStringParametersFromBound `
+				-BoundParameters $PSBoundParameters `
+				-ParameterList 'top'
+		}
+	}
+
+	$Result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Project $Project `
+		-Path $path `
+		-ApiVersion '2.0' `
+		@additionalInvokeParameters
+
+	return $Result.Value
 }
 
 <#
@@ -405,6 +505,26 @@ function New-VstsBuildDefinition
 
 	.PARAMETER BuildId
 	The BuildId of the artifacts to return.
+
+	.EXAMPLE
+	>
+	$vstsSession = New-VSTSSession `
+		-AccountName 'myvstsaccount' `
+		-User 'joe.bloggs@fabrikam.com' `
+		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
+	$build = Get-VstsBuild `
+		-Session $Session `
+		-Project 'FabrikamFiber' `
+		-Top 1
+
+	Get-VstsBuildArtifact `
+		-Session $Session `
+		-Project 'FabrikamFiber' `
+		-BuildId ($build.Id)
+
+	Get all the build artifacts from the latest build in project
+	FabrikamFiber.
 #>
 function Get-VstsBuildArtifact
 {
