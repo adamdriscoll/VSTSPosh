@@ -2,50 +2,149 @@
 $token = $env:VSTSPoshToken
 $account = $env:VSTSPoshAccount
 
-function New-ProjectName {
-	[Guid]::NewGuid().ToString().Replace('-','').Substring(10)
+function New-ProjectName
+{
+	[Guid]::NewGuid().ToString().Replace('-', '').Substring(10)
 }
 
-Import-Module (Join-Path $PSScriptRoot '..\VSTS.psm1') -Force
+Import-Module -Name (Join-Path $PSScriptRoot '..\VSTS.psm1') -Force
 
 Describe "Projects" -Tags Integration {
+	$Script:Session = New-VSTSSession -AccountName $account -User $userName -Token $token
+
 	Context "Project doesn't exist" {
-		It "Should create new project" {
-			$ProjectName = New-ProjectName
-			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name $ProjectName -Wait
-			Get-VSTSProject -Session $Session -Name $ProjectName | Should Not BeNullOrEmpty
-			Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name $ProjectName
+		Context 'Using session object' {
+			Context 'Using no parameters' {
+				$projectName = New-ProjectName
+
+				$parameterDetails = @{
+					Session = $Script:Session
+					Name    = $projectName
+					Verbose = $True
+				}
+
+				It "Should create a new project '$projectName'" {
+					{ New-VSTSProject @parameterDetails -Wait } | Should Not Throw
+				}
+
+				It "Should return the new project '$projectName'" {
+					{ $script:Result = Get-VSTSProject @parameterDetails } | Should Not Throw
+					$script:Result.Name | Should BeExactly $projectName
+				}
+
+				It "Should delete the new project '$projectName'" {
+					{ Remove-VSTSProject @parameterDetails } | Should Not Throw
+				}
+			}
+
+			Context "Using template name 'Scrum'" {
+				$projectName = New-ProjectName
+
+				$parameterDetails = @{
+					Session = $Script:Session
+					Name    = $projectName
+					Verbose = $True
+				}
+
+				It "Should create a new project '$projectName'" {
+					{ New-VSTSProject @parameterDetails -TemplateTypeName 'Scrum' -Wait } | Should Not Throw
+				}
+
+				It "Should return the new project '$projectName'" {
+					{ $script:Result = Get-VSTSProject @parameterDetails } | Should Not Throw
+					$script:Result.Name | Should BeExactly $projectName
+				}
+
+				It "Should delete the new project '$projectName'" {
+					{ Remove-VSTSProject @parameterDetails } | Should Not Throw
+				}
+			}
 		}
 
-		It "Should create new project with session" {
-			$ProjectName = New-ProjectName
-			$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
-			New-VSTSProject -Session $Session -Name $ProjectName -Wait
-			Get-VSTSProject -Session $Session -Name $ProjectName | Should Not BeNullOrEmpty
-			Remove-VSTSProject -Session $Session -Name $ProjectName
-		}
+		Context 'Using account details' {
+			Context 'Using no parameters' {
+				$projectName = New-ProjectName
 
-		It "Should create new project with specified template name" {
-			$ProjectName = New-ProjectName
-			$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
-			New-VSTSProject -Session $Session -Name $ProjectName -Wait -TemplateTypeName 'Scrum'
-			Get-VSTSProject -Session $Session -Name $ProjectName | Should Not BeNullOrEmpty
-			Remove-VSTSProject -Session $Session -Name $ProjectName
+				$parameterDetails = @{
+					AccountName = $account
+					User        = $userName
+					Token       = $Token
+					Name        = $projectName
+					Verbose     = $True
+				}
+
+				It "Should create a new project '$projectName'" {
+					{ New-VSTSProject @parameterDetails -Wait } | Should Not Throw
+				}
+
+				It "Should return the new project '$projectName'" {
+					{ $script:Result = Get-VSTSProject @parameterDetails } | Should Not Throw
+					$script:Result.Name | Should BeExactly $projectName
+				}
+
+				It "Should delete the new project '$projectName'" {
+					{ Remove-VSTSProject @parameterDetails } | Should Not Throw
+				}
+			}
+
+			Context "Using template name 'Scrum'" {
+				$projectName = New-ProjectName
+
+				$parameterDetails = @{
+					AccountName = $account
+					User        = $userName
+					Token       = $Token
+					Name        = $projectName
+					Verbose     = $True
+				}
+
+				It "Should create a new project '$projectName'" {
+					{ New-VSTSProject @parameterDetails -TemplateTypeName 'Scrum' -Wait } | Should Not Throw
+				}
+
+				It "Should return the new project '$projectName'" {
+					{ $script:Result = Get-VSTSProject @parameterDetails } | Should Not Throw
+					$script:Result.Name | Should BeExactly $projectName
+				}
+
+				It "Should delete the new project '$projectName'" {
+					{ Remove-VSTSProject @parameterDetails } | Should Not Throw
+				}
+			}
+
 		}
 	}
 
-	Context "Process" {
-		It "Should returns default process template" {
-			$Session = New-VstsSession -AccountName $account -User $userName -Token $token
+	Context 'Process' {
+		Context 'Using session object' {
+			$parameterDetails = @{
+				Session = $Script:Session
+				Verbose = $True
+			}
 
-			$Process = Get-VstsProcess -Session $Session | Where-Object -Property Name -EQ 'Agile'
-			$Process | Should Not BeNullOrEmpty
-
-			$Process = Get-VstsProcess -Session $Session | Where-Object -Property Name -EQ 'CMMI'
-			$Process | Should Not BeNullOrEmpty
-
-			$Process = Get-VstsProcess -Session $Session | Where-Object -Property Name -EQ 'SCRUM'
-			$Process | Should Not BeNullOrEmpty
+			It 'Should returns default process templates' {
+				{ $script:Result = Get-VstsProcess @parameterDetails } | Should Not Throw
+				$script:Result | Where-Object -Property Name -EQ 'Agile' | Should Not BeNullOrEmpty
+				$script:Result | Where-Object -Property Name -EQ 'CMMI' | Should Not BeNullOrEmpty
+				$script:Result | Where-Object -Property Name -EQ 'Scrum' | Should Not BeNullOrEmpty
+			}
 		}
+
+		Context 'Using account details' {
+			$parameterDetails = @{
+				AccountName = $account
+				User        = $userName
+				Token       = $Token
+				Verbose     = $True
+			}
+
+			It 'Should returns default process templates' {
+				{ $script:Result = Get-VstsProcess @parameterDetails } | Should Not Throw
+				$script:Result | Where-Object -Property Name -EQ 'Agile' | Should Not BeNullOrEmpty
+				$script:Result | Where-Object -Property Name -EQ 'CMMI' | Should Not BeNullOrEmpty
+				$script:Result | Where-Object -Property Name -EQ 'Scrum' | Should Not BeNullOrEmpty
+			}
+		}
+
 	}
 }

@@ -60,4 +60,10 @@ Describe 'VSTS' -Tags Unit {
 			Write-Warning -Message "Skipping ScriptAnalyzer since not PowerShell 5"
 		}
 	}
+
+	Import-Module -Name $modulePath
+	InModuleScope 'VSTS' {
+		Context 'New-VstsSession' {
+		}
+	}
 }

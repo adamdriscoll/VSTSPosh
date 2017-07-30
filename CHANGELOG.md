@@ -10,7 +10,9 @@
 - Unit Tests:
   - Fixed PS Script Analyzer and added support for reporting on
     warning-level rules. Copied from Microsoft DSC Resource Kit
-	test methodology.
+    test methodology.
+- Split the module into lib files to reduce the size of the main
+  module.
 - Visual Studio Code Workspace settings:
   - Added to ensure style guidelines matched when using VSCode.
 - Get-VstsEndpointUri Cmdlet:
@@ -35,9 +37,6 @@
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
-  - BREAKING: Remove support for passing session parameters to match
-    pattern of other calls. Also to enable QueryString and Name
-    parameter set.
   - Added StateFilter parameter for querying on StateFilter.
   - Added Top and Skip parameter for limiting result set.
 - Wait-VSTSProject Cmdlet:
@@ -46,21 +45,22 @@
   - Added CmdletBinding and other PowerShell best practice changes.
   - Added RetryIntervalSec parameter to support controlling test
     frequency.
+  - Added AccountName, User and Token parameters.
 - New-VSTSProject Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
-  - BREAKING: Remove support for passing session parameters to match
-    pattern of other calls. Also to enable QueryString and Name
-    parameter set.
 - Remove-VSTSProject Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
-  - BREAKING: Remove support for passing session parameters to match
-    pattern of other calls. Also to enable QueryString and Name
-    parameter set.
   - Suppress output of REST API from being placed into pipeline.
+- Get-VstsProcess Cmdlet:
+  - Added documentation.
+  - Style consistency cleanup.
+  - Added CmdletBinding and other PowerShell best practice changes.
+  - Added Id parameter to allow querying a specific Id.
+  - Added AccountName, User and Token parameters.
 - Get-VstsBuildArtifact Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
@@ -73,11 +73,6 @@
     releases.
 - New-VstsRelease Cmdlet:
   - Added cmdlet to create a new release.
-- Get-VstsProcess Cmdlet:
-  - Added documentation.
-  - Style consistency cleanup.
-  - Added CmdletBinding and other PowerShell best practice changes.
-  - Added Id parameter to allow querying a specific Id.
 - Get-VstsCodePolicyConfiguration Cmdlet:
   - BREAKING: Renamed from Get-VstsCodePolicy to match actual purpose.
   - Added documentation.
