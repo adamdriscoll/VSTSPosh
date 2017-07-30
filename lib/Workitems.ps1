@@ -120,9 +120,7 @@ function Get-VstsWorkItem
 
 	.PARAMETER PropertyHashtable
 	A hash table containing the properties to set for the new
-	work item. Because hash tables to not support '.' in the key
-	all '.' must be replaced with underscore. This will be replaced
-	with a '.' when submitted to the API.
+	work item.
 
 	.EXAMPLE
 	>
@@ -135,7 +133,7 @@ function Get-VstsWorkItem
 		-Session $session `
 		-Project 'FabrikamFiber' `
 		-WorkItemType 'User Story' `
-		-PropertyHashtable @{ System_Title = 'Add support for creating new work item' }
+		-PropertyHashtable @{ 'System.Title' = 'Add support for creating new work item' }
 
 	Creates a new user story in FabrikamFiber project with the
 	title 'Add support for creating new work item'
@@ -178,7 +176,7 @@ function New-VstsWorkItem
 	{
 		[PSCustomObject] @{
 			op    = 'add'
-			path  = '/fields/{0}' -f ($kvp.Key.Replace('_', '.'))
+			path  = ('/fields/{0}' -f $kvp.Key)
 			value = $kvp.value
 		}
 	}

@@ -1,12 +1,12 @@
 ﻿$userName = $env:VSTSPoshUserName
 $token = $env:VSTSPoshToken
-$account = $env:VSTSPoshAccount 
+$account = $env:VSTSPoshAccount
 
 function New-ProjectName {
 	[Guid]::NewGuid().ToString().Replace('-','').Substring(10)
 }
 
-Import-Module (Join-Path $PSScriptRoot '..\VSTS.psm1') -Force
+Import-Module -Name (Join-Path $PSScriptRoot '..\VSTS.psm1') -Force
 
 Describe "Code" -Tags "Integration" {
 	$ProjectName = New-ProjectName
@@ -16,7 +16,7 @@ Describe "Code" -Tags "Integration" {
 	Context "Repository doesn't exist" {
 		It "Creates repository" {
 			New-VSTSGitRepository -Session $Session -Project $ProjectName -RepositoryName 'TestRepo'
-			$Repo = Get-VSTSGitRepository -Session $Session -Project $ProjectName | Where Name -EQ 'TestRepo' 
+			$Repo = Get-VSTSGitRepository -Session $Session -Project $ProjectName | Where Name -EQ 'TestRepo'
 			$Repo | Should not be $null
 		}
 	}
