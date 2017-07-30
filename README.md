@@ -13,6 +13,7 @@
   - New-VstsSession
 - Projects
   - Get-VstsProject
+  - Wait-VstsProject
   - New-VstsProject
   - Remove-VstsProject
   - Get-VstsProcess
