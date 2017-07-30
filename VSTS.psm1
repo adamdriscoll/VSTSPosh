@@ -330,6 +330,29 @@ function Get-VstsAuthorization
 	$value = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(("{0}:{1}" -f $User, $Token)))
 	return ("Basic {0}" -f $value)
 }
+<#
+	.SYNOPSIS
+	Checks that a Guid is valid.
+
+	.PARAMETER Input
+	The Guid to validate.
+
+	.OUTPUTS
+	Returns true if the Guid is valid.
+#>
+function Test-Guid
+{
+	[CmdletBinding()]
+	[OutputType([Boolean])]
+	param
+	(
+		[Parameter(Mandatory = $True)]
+		$Input
+	)
+
+	$Guid = [Guid]::Empty
+	[Guid]::TryParse($Input, [ref]$Guid)
+}
 
 <#
 	.SYNOPSIS
@@ -737,7 +760,7 @@ function New-VstsWorkItem
 	{
 		[PSCustomObject] @{
 			op    = 'add'
-			path  = '/fields/{0}' -f ($kvp.Key.Replace('_','.'))
+			path  = '/fields/{0}' -f ($kvp.Key.Replace('_', '.'))
 			value = $kvp.value
 		}
 	}
@@ -805,71 +828,133 @@ function Get-VstsWorkItemQuery
 <#
 	.SYNOPSIS
 	Gets Git repositories in the specified team project.
+
+	.PARAMETER Session
+	The session object created by New-VstsSession.
+
+	.PARAMETER Project
+	The name of the project to get the repositories from.
+
+	.PARAMETER Repository
+	The id or name of the repository.
+
+	.EXAMPLE
+	$vstsSession = New-VSTSSession `
+		-AccountName 'myvstsaccount' `
+		-User 'joe.bloggs@fabrikam.com' `
+		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
+	Get-VstsGitRepository `
+		-Session $session `
+		-Project 'FabrikamFiber'
+
+	Get a list of Git repositories in the FabrikamFiber project.
+
+	.EXAMPLE
+	$vstsSession = New-VSTSSession `
+		-AccountName 'myvstsaccount' `
+		-User 'joe.bloggs@fabrikam.com' `
+		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
+	Get-VstsGitRepository `
+		-Session $session `
+		-Project 'FabrikamFiber' `
+		-Repository 'PortalApp'
+
+	Get a the PortalApp repository in the FabrikamFiber project.
 #>
 function Get-VstsGitRepository
 {
+	[CmdletBinding()]
 	param
 	(
-		[Parameter(Mandatory, ParameterSetname = 'Account')]
-		$AccountName,
-		[Parameter(Mandatory, ParameterSetname = 'Account')]
-		$User,
-		[Parameter(Mandatory, ParameterSetname = 'Account')]
-		$Token,
-		[Parameter(Mandatory, ParameterSetname = 'Session')]
+		[Parameter(Mandatory = $True)]
 		$Session,
-		[Parameter(Mandatory = $true)]$Project
+
+		[Parameter(Mandatory = $true)]
+		[String] $Project,
+
+		[Parameter()]
+		[String] $Repository
 	)
 
-	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	$path = 'git/repositories'
+
+	if ($PSBoundParameters.ContainsKey('Repository'))
 	{
-		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+		$path = ('{0}/{1}' -f $path, $Repository)
 	}
 
-	$Result = Invoke-VstsEndpoint -Session $Session -Project $Project -Path 'git/repositories' -QueryStringParameters @{depth = 1}
-	$Result.Value
+	$result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Project $Project `
+		-Path $path
+
+	return $result.Value
 }
 
 <#
 	.SYNOPSIS
 	Creates a new Git repository in the specified team project.
+
+	.PARAMETER Session
+	The session object created by New-VstsSession.
+
+	.PARAMETER Project
+	The name of the project to get the repositories from.
+
+	.PARAMETER RepositoryName
+	The name of the repository to create.
+
+	.EXAMPLE
+	$vstsSession = New-VSTSSession `
+		-AccountName 'myvstsaccount' `
+		-User 'joe.bloggs@fabrikam.com' `
+		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
+	New-VstsGitRepository `
+		-Session $session `
+		-Project 'FabrikamFiber' `
+		-RepositoryName 'PortalApp'
+
+	Create a repository in the FabrikamFiber project called PortalApp.
 #>
 function New-VstsGitRepository
 {
 	param
 	(
-		[Parameter(Mandatory, ParameterSetname = 'Account')]
-		$AccountName,
-		[Parameter(Mandatory, ParameterSetname = 'Account')]
-		$User,
-		[Parameter(Mandatory, ParameterSetname = 'Account')]
-		$Token,
-		[Parameter(Mandatory, ParameterSetname = 'Session')]
+		[Parameter(Mandatory = $True)]
 		$Session,
-		[Parameter(Mandatory = $true)]
+
+		[Parameter(Mandatory = $True)]
 		$Project,
-		[Parameter(Mandatory = $true)]
+
+		[Parameter(Mandatory = $True)]
 		$RepositoryName
 	)
 
-	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	$path = 'git/repositories'
+
+	if (-not (Test-Guid -Input $Project))
 	{
-		$Session = New-VSTSSession -AccountName $AccountName -User $User -Token $Token
+		$projectId = (Get-VstsProject -Session $Session -Name $Project).Id
 	}
 
-	if (-not (Test-Guid $Project))
-	{
-		$Project = (Get-VstsProject -Session $Session -Name $Project).Id
-	}
-
-	$Body = @{
+	$body = @{
 		Name    = $RepositoryName
 		Project = @{
-			Id = $Project
+			Id = $projectId
 		}
 	} | ConvertTo-Json
 
-	Invoke-VstsEndpoint -Session $Session -Method POST -Path 'git/repositories' -Body $Body
+	$result = Invoke-VstsEndpoint `
+		-Session $Session `
+		-Path $path `
+		-Method 'POST' `
+		-Body $body `
+		-ErrorAction Stop
+
+	return $result.Value
 }
 
 <#
@@ -1187,7 +1272,7 @@ function Get-VstsBuildDefinition
 		$Session,
 
 		[Parameter(Mandatory = $true)]
-		$Project,
+		[String] $Project,
 
 		[Parameter(ParameterSetName = 'Id')]
 		[Int32] $Id,
@@ -1229,15 +1314,6 @@ function Get-VstsBuildDefinition
 		@additionalInvokeParameters
 
 	return $result.Value
-}
-
-
-function Test-Guid
-{
-	param([Parameter(Mandatory)]$Input)
-
-	$Guid = [Guid]::Empty
-	[Guid]::TryParse($Input, [ref]$Guid)
 }
 
 <#
@@ -1367,6 +1443,15 @@ function New-VstsBuildDefinition
 <#
 	.SYNOPSIS
 	Gets build queues for the collection.
+
+	.PARAMETER Session
+	The session object created by New-VstsSession.
+
+	.PARAMETER Id
+	The Id of the Build Queue to retrieve.
+
+	.PARAMETER Name
+	The Name of the Build Queue to retrieve.
 #>
 function Get-VstsBuildQueue
 {

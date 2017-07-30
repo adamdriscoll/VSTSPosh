@@ -96,21 +96,40 @@
     pattern of other calls. Also to enable QueryString and Name
     parameter set.
 - Get-VstsWorkItem Cmdlet:
+  - Added documentation.
   - Style consistency cleanup.
-  - Added CmdletBinding and other PowerShell best practice changes.
   - Added CmdletBinding and other PowerShell best practice changes.
   - BREAKING: Remove support for passing session parameters to match
     pattern of other calls. Also to enable QueryString and Name
     parameter set.
   - Added additional query options to improve work item lookup.
 - New-VstsWorkItem Cmdlet:
+  - Added documentation.
   - Style consistency cleanup.
-  - Added CmdletBinding and other PowerShell best practice changes.
   - Added CmdletBinding and other PowerShell best practice changes.
   - BREAKING: Remove support for passing session parameters to match
     pattern of other calls. Also to enable QueryString and Name
     parameter set.
   - Fixed bugs that prevented cmdlet from creating work item.
+- Test-Guid Cmdlet:
+  - Added documentation.
+  - Style consistency cleanup.
+  - Added CmdletBinding and other PowerShell best practice changes.
+- Get-VstsGitRepository Cmdlet:
+  - Added documentation.
+  - Style consistency cleanup.
+  - Added CmdletBinding and other PowerShell best practice changes.
+  - BREAKING: Remove support for passing session parameters to match
+    pattern of other calls. Also to enable QueryString and Name
+    parameter set.
+  - Added repository parameter to filter on repository id or name.
+- New-VstsGitRepository Cmdlet:
+  - Added documentation.
+  - Style consistency cleanup.
+  - Added CmdletBinding and other PowerShell best practice changes.
+  - BREAKING: Remove support for passing session parameters to match
+    pattern of other calls. Also to enable QueryString and Name
+    parameter set.
 
 ## 1.0.0.0
 
