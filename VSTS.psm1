@@ -228,6 +228,7 @@ function Invoke-VstsEndpoint
 		[Hashtable] $QueryStringParameters,
 
 		[Parameter()]
+		[ValidateNotNullOrEmpty()]
 		[String] $Project,
 
 		[Parameter()]

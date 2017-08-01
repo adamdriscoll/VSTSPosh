@@ -18,7 +18,8 @@
 	The name of the project to get the repositories from.
 
 	.PARAMETER Repository
-	The id or name of the repository.
+	The id or name of the repository. If this is a repository
+	id then the Project is optional.
 
 	.EXAMPLE
 	>
@@ -64,10 +65,12 @@ function Get-VstsGitRepository
 		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
 		$Session,
 
-		[Parameter(Mandatory = $true)]
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
 		[String] $Project,
 
 		[Parameter()]
+		[ValidateNotNullOrEmpty()]
 		[String] $Repository
 	)
 
@@ -83,10 +86,17 @@ function Get-VstsGitRepository
 		$path = ('{0}/{1}' -f $path, $Repository)
 	}
 
-	$result = Invoke-VstsEndpoint `
-		-Session $Session `
-		-Project $Project `
-		-Path $path
+	$invokeParameters = @{
+		Session = $Session
+		Path    = $Path
+	}
+
+	if ($PSBoundParameters.ContainsKey('Project'))
+	{
+		$invokeParameters += @{ Project = $Project }
+	}
+
+	$result = Invoke-VstsEndpoint @invokeParameters
 
 	return $result.Value
 }
@@ -108,7 +118,7 @@ function Get-VstsGitRepository
 	The session object created by New-VstsSession.
 
 	.PARAMETER Project
-	The name of the project to get the repositories from.
+	The name of the project to create the repositories in.
 
 	.PARAMETER RepositoryName
 	The name of the repository to create.
@@ -145,10 +155,10 @@ function New-VstsGitRepository
 		$Session,
 
 		[Parameter(Mandatory = $True)]
-		$Project,
+		[String] $Project,
 
 		[Parameter(Mandatory = $True)]
-		$RepositoryName
+		[String] $RepositoryName
 	)
 
 	if ($PSCmdlet.ParameterSetName -eq 'Account')
@@ -158,7 +168,12 @@ function New-VstsGitRepository
 
 	$path = 'git/repositories'
 
-	if (-not (Test-Guid -Input $Project))
+	# Ensure we have what looks like a Project Id Guid.
+	if (Test-Guid -Input $Project)
+	{
+		$projectId = $Project
+	}
+	else
 	{
 		$projectId = (Get-VstsProject -Session $Session -Name $Project).Id
 	}
@@ -178,6 +193,104 @@ function New-VstsGitRepository
 		-ErrorAction Stop
 
 	return $result.Value
+}
+
+<#
+	.SYNOPSIS
+	Deletes a Git repository from the specified team project.
+
+	.PARAMETER AccountName
+	The name of the VSTS account to use.
+
+	.PARAMETER User
+	This user name to authenticate to VSTS.
+
+	.PARAMETER Token
+	This personal access token to use to authenticate to VSTS.
+
+	.PARAMETER Session
+	The session object created by New-VstsSession.
+
+	.PARAMETER Project
+	The name of the project to delete the repository from.
+
+	.PARAMETER RepositoryName
+	The name of the repository to delete.
+
+	.EXAMPLE
+	>
+	$vstsSession = New-VSTSSession `
+		-AccountName 'myvstsaccount' `
+		-User 'joe.bloggs@fabrikam.com' `
+		-Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
+	Remove-VstsGitRepository `
+		-Session $session `
+		-Project 'FabrikamFiber' `
+		-RepositoryName 'PortalApp'
+
+	Delete the PortalAll repository from the FabrikamFiber project.
+#>
+function Remove-VstsGitRepository
+{
+	[CmdletBinding(DefaultParameterSetName = 'Account')]
+	param
+	(
+		[Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+		[String] $AccountName,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $User,
+
+		[Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+		[String] $Token,
+
+		[Parameter(Mandatory = $True, ParameterSetName = 'Session')]
+		$Session,
+
+		[Parameter()]
+		[ValidateNotNullOrEmpty()]
+		[String] $Project,
+
+		[Parameter(Mandatory = $True)]
+		[ValidateNotNullOrEmpty()]
+		[String] $Repository
+	)
+
+	if ($PSCmdlet.ParameterSetName -eq 'Account')
+	{
+		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
+
+	# Make sure the Repository Id Guid is available
+	if (Test-Guid -Input $Repository)
+	{
+		$repositoryId = $Repository
+		if ($PSBoundParameters.ContainsKey('Project'))
+		{
+			Throw 'Repository Id must be a Guid if Project is not passed.'
+		}
+	}
+	else
+	{
+		$repositoryId = (Get-VstsGitRepository -Session $Session -Repository $Repository).Id
+	}
+
+	$path = ('git/repositories/{0}' -f $repositoryId)
+
+	$invokeParameters = @{
+		Session     = $Session
+		Path        = $Path
+		Method      = 'DELETE'
+		ErrorAction = 'Stop'
+	}
+
+	if ($PSBoundParameters.ContainsKey('Project'))
+	{
+		$invokeParameters += @{ Project = $Project }
+	}
+
+	$null = Invoke-VstsEndpoint @invokeParameters
 }
 
 <#

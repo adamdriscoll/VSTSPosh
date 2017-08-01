@@ -111,6 +111,8 @@
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
+- Remove-VstsGitRepository Cmdlet:
+  - Added cmdlet to delete repositories.
 
 ## 1.0.0.0
 

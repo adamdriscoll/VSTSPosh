@@ -8,18 +8,51 @@ function New-ProjectName {
 
 Import-Module -Name (Join-Path $PSScriptRoot '..\VSTS.psm1') -Force
 
-Describe "Code" -Tags "Integration" {
-	$ProjectName = New-ProjectName
-	$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
-	New-VSTSProject -Session $Session -Name $ProjectName -Wait
+Describe 'Code' -Tags 'Integration' {
+	$testRepoName = 'TestRepo'
 
-	Context "Repository doesn't exist" {
-		It "Creates repository" {
-			New-VSTSGitRepository -Session $Session -Project $ProjectName -RepositoryName 'TestRepo'
-			$Repo = Get-VSTSGitRepository -Session $Session -Project $ProjectName | Where Name -EQ 'TestRepo'
-			$Repo | Should not be $null
+	BeforeAll {
+		$projectName = New-ProjectName
+		$session = New-VSTSSession -AccountName $account -User $userName -Token $token
+		Write-Verbose -Verbose -Message ('Creating VSTS test project {0}' -f $projectName)
+		New-VSTSProject -Session $session -Name $projectName -Wait
+	}
+
+	Context 'Create a repository, get the repository and remove the repository' {
+		It 'Should create repository' {
+			{ $script:newRepo = New-VSTSGitRepository `
+				-Session $session `
+				-Project $projectName `
+				-RepositoryName $testRepoName `
+				-Verbose } | Should Not Throw
+			$script:newRepo.Name | Should Be $testRepoName
+		}
+
+		It 'Should get the repository' {
+			{ $script:existingRepo = Get-VSTSGitRepository `
+				-Session $session `
+				-Project $projectName `
+				-Repository $testRepoName `
+				-Verbose } | Should Not Throw
+			$script:existingRepo.Name | Should Be $testRepoName
+		}
+
+		It 'Should delete the repository' {
+			{ Remove-VSTSGitRepository `
+				-Session $session `
+				-Project $projectName `
+				-Repository $testRepoName `
+				-Verbose } | Should Not Throw
+			{ $script:existingRepo = Get-VSTSGitRepository `
+				-Session $session `
+				-Project $projectName `
+				-Repository $testRepoName `
+				-Verbose } | Should Throw
 		}
 	}
 
-	Remove-VSTSProject -Session $Session -Name $ProjectName
+	AfterAll {
+		Write-Verbose -Verbose -Message ('Deleting VSTS test project {0}' -f $projectName)
+		Remove-VSTSProject -Session $session -Name $projectName
+	}
 }
