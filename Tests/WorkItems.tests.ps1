@@ -12,6 +12,7 @@ Describe 'Work items' -Tags 'Integration' {
 	BeforeAll {
 		$projectName = New-ProjectName
 		$session = New-VSTSSession -AccountName $account -User $userName -Token $token
+		Write-Verbose -Verbose -Message ('Creating VSTS test project {0}' -f $projectName)
 		New-VSTSProject -Session $session -Name $projectName -Wait
 	}
 
@@ -26,12 +27,14 @@ Describe 'Work items' -Tags 'Integration' {
 					'System.Description' = 'Test'
 				} `
 				-Verbose } | Should Not Throw
-			$script:workItem | Should Not BeNullOrEmpty
+			$script:workItem.Fields.'System.Title' | Should Be 'This is a test work item'
+			$script:workItem.Fields.'System.Description' | Should Be 'Test'
 		}
 	}
 
 	AfterAll {
-		Remove-VSTSProject -Session $session -Name $projectName -Verbose
+		Write-Verbose -Verbose -Message ('Deleting VSTS test project {0}' -f $projectName)
+		Remove-VSTSProject -Session $session -Name $projectName
 	}
 }
 

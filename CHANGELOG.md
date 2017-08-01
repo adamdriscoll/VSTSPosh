@@ -46,10 +46,14 @@
   - Added RetryIntervalSec parameter to support controlling test
     frequency.
   - Added AccountName, User and Token parameters.
+  - Added State parameter to enable waiting for a project to enter
+    a specific state.
 - New-VSTSProject Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
+  - Changed Wait parameter to wait for a project to enter the
+    WellFormed state.
 - Remove-VSTSProject Cmdlet:
   - Added documentation.
   - Style consistency cleanup.

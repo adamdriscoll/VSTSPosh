@@ -118,6 +118,11 @@ function Get-VstsProject
 	.PARAMETER RetryIntervalSec
 	The number of seconds to wait between each check for the
 	project.
+
+	.PARAMETER State
+	Specifies if the cmdlet will wait for the project to enter
+	a specific state. This only applies if the Exists switch is
+	enabled.
 #>
 function Wait-VSTSProject
 {
@@ -139,16 +144,32 @@ function Wait-VSTSProject
 		[Parameter(Mandatory = $True)]
 		[String] $Name,
 
+		[Parameter()]
 		[Int32] $Attempts = 30,
 
+		[Parameter()]
 		[Switch] $Exists,
 
-		[Int32] $RetryIntervalSec = 2
+		[Parameter()]
+		[Int32] $RetryIntervalSec = 2,
+
+		[Parameter()]
+		[ValidateSet('WellFormed', 'CreatePending', 'Deleting', 'New', 'All')]
+		[String] $State
 	)
 
 	if ($PSCmdlet.ParameterSetName -eq 'Account')
 	{
 		$Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+	}
+
+	if ($Exists)
+	{
+		$existsMessage = 'exists'
+	}
+	else
+	{
+		$existsMessage = 'does not exist'
 	}
 
 	$retries = 0
@@ -157,18 +178,25 @@ function Wait-VSTSProject
 		# Takes a few seconds for the project to be created
 		Start-Sleep -Seconds $RetryIntervalSec
 
-		Write-Verbose -Message ('Checking project {0} state' -f $Name)
+		Write-Verbose -Message ('Checking project {0} {1}' -f $Name, $existsMessage)
 		$project = Get-VSTSProject `
 			-Session $Session `
 			-Name $Name `
 			-ErrorAction SilentlyContinue
+
+		# If waiting for project to exist and state specified then wait for it to match state
+		if ($Exists -and $PSBoundParameters.ContainsKey('State') -and $project.State -ne $State)
+		{
+			Write-Verbose -Message ('Project exists but state is {0} and not {1}' -f $project.State, $State)
+			$project = $null
+		}
 
 		$retries++
 	} while ((($null -eq $project -and $Exists) -or ($null -ne $project -and -not $Exists)) -and $retries -le $Attempts)
 
 	if (($null -eq $project -and $Exists) -or ($null -ne $project -and -not $Exists) )
 	{
-		throw "Failed to create team project!"
+		throw ('Project {0} {1}' -f $Name, $existsMessage)
 	}
 }
 
@@ -295,7 +323,7 @@ function New-VstsProject
 	if ($Wait)
 	{
 		Write-Verbose -Message ('Waiting for project {0} to be created' -f $Name)
-		Wait-VSTSProject -Session $Session -Name $Name -Exists
+		Wait-VSTSProject -Session $Session -Name $Name -Exists -State WellFormed
 	}
 
 	return $result.Value
