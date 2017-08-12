@@ -3,7 +3,7 @@ clone_folder: C:\VSTS
 image: WMF 5
 
 install:
-  - cinst pester
+  - ps: Install-Module -Name Pester -Force -Scope CurrentUser
 
 version: 1.0.{build}
 
