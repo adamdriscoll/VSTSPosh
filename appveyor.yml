@@ -3,15 +3,15 @@ clone_folder: C:\VSTS
 image: WMF 5
 
 install:
-  - ps:
-    Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
-    Install-Module -Name Pester -Force -Scope CurrentUser
+  - ps: |
+      Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+      Install-Module -Name Pester -Force -Scope CurrentUser
 
-    # Install Nuget.exe to enable package creation
-    $nugetExePath = Join-Path -Path $ENV:APPVEYOR_BUILD_FOLDER `
-                              -ChildPath 'nuget.exe'
-    $Uri = 'https://dist.nuget.org/win-x86-commandline/v3.4.4/NuGet.exe'
-    Invoke-WebRequest -Uri $Uri -OutFile $nugetExePath
+      # Install Nuget.exe to enable package creation
+      $nugetExePath = Join-Path -Path $ENV:APPVEYOR_BUILD_FOLDER `
+                                -ChildPath 'nuget.exe'
+      $Uri = 'https://dist.nuget.org/win-x86-commandline/v3.4.4/NuGet.exe'
+      Invoke-WebRequest -Uri $Uri -OutFile $nugetExePath
 
 version: 1.0.{build}
 
