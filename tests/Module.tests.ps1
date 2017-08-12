@@ -1,7 +1,7 @@
 ﻿$moduleRoot = Split-Path -Path $PSScriptRoot -Parent
 $modulePath = Join-Path -Path $moduleRoot -ChildPath 'VSTS.psm1'
 
-Describe 'VSTS' -Tags Unit {
+Describe 'VSTS' -Tags 'Unit' {
     Context 'PSScriptAnalyzer' {
         if ($PSVersionTable.PSVersion.Major -ge 5)
         {
@@ -63,12 +63,6 @@ Describe 'VSTS' -Tags Unit {
         else
         {
             Write-Warning -Message "Skipping ScriptAnalyzer since not PowerShell 5"
-        }
-    }
-
-    Import-Module -Name $modulePath
-    InModuleScope 'VSTS' {
-        Context 'New-VstsSession' {
         }
     }
 }
