@@ -16,13 +16,13 @@ install:
 version: 1.0.{build}
 
 build_script:
-- ps: $ENV:APPVEYOR_BUILD_FOLDER\CreateModuleManifest.ps1
+- ps: .\CreateModuleManifest.ps1
 
 test_script:
-- ps: $ENV:APPVEYOR_BUILD_FOLDER\InvokeTests.ps1
+- ps: .\InvokeTests.ps1
 
 deploy_script:
-- ps: $ENV:APPVEYOR_BUILD_FOLDER\PublishModule.ps1
+- ps: .\PublishModule.ps1
 
 environment:
   ApiKey:
