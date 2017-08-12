@@ -1,5 +1,3 @@
-$repoPath = $PSScriptRoot
-
 if ($PSVersionTable.PSVersion.Major -ge 5)
 {
     Write-Verbose -Message 'Installing PSScriptAnalyzer' -Verbose
@@ -34,17 +32,35 @@ else
         ) -Join '' )
 }
 
-# Always run unit tests first
+# Always run unit tests first (test pyramid)
+$unitTestResultsPath = (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'TestsResults.Unit.xml')
 $result = Invoke-Pester `
-    -Path (Join-Path -Path $repoPath -ChildPath 'Tests') `
+    -Path (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'Tests') `
     -OutputFormat NUnitXml `
-    -OutputFile (Join-Path -Path $repoPath -ChildPath 'TestsResults.Unit.xml')  `
+    -OutputFile $unitTestResultsPath  `
     -PassThru `
-    -Tag Unit
+    -Tag Unit `
+    -CodeCoverage @(
+        (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath '*.psm1')
+        (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'lib\*.ps1')
+    )
 
 if ($env:APPVEYOR -eq $true)
 {
-    (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Join-Path -Path $repoPath -ChildPath 'TestsResults.Unit.xml'))
+    (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $unitTestResultsPath)
+
+        # Upload code coverage
+    if ($result.CodeCoverage)
+    {
+        Write-Info -Message 'Uploading CodeCoverage to CodeCov.io...'
+        Import-Module -Name (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath '\Support\CodeCovIo.psd1')
+        $jsonPath = Export-CodeCovIoJson -CodeCoverage $result.CodeCoverage -repoRoot $env:APPVEYOR_BUILD_FOLDER
+        Invoke-UploadCoveCoveIoReport -Path $jsonPath
+    }
+    else
+    {
+        Write-Warning -Message 'Could not create CodeCov.io report because pester results object did not contain a CodeCoverage object'
+    }
 }
 
 if ($result.FailedCount -gt 0)
@@ -55,20 +71,21 @@ if ($result.FailedCount -gt 0)
 # Run integration tests if not a PR or if run manually
 if ($null -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)
 {
+    $integrationTestResultsPath = (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'TestsResults.Integration.xml')
     $result = Invoke-Pester `
-        -Path (Join-Path -Path $repoPath -ChildPath 'Tests') `
+        -Path (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'Tests') `
         -OutputFormat NUnitXml `
-        -OutputFile (Join-Path -Path $repoPath -ChildPath 'TestsResults.Integration.xml') `
+        -OutputFile $integrationTestResultsPath `
         -PassThru `
         -Tag Integration `
         -CodeCoverage @(
-            (Join-Path -Path $repoPath -ChildPath '*.psm1')
-            (Join-Path -Path $repoPath -ChildPath 'lib\*.ps1')
+            (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath '*.psm1')
+            (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'lib\*.ps1')
         )
 
     if ($env:APPVEYOR -eq $true)
     {
-        (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Join-Path -Path $repoPath -ChildPath 'TestsResults.Integration.xml'))
+        (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $integrationTestResultsPath)
     }
 
     if ($result.FailedCount -gt 0)
@@ -76,3 +93,4 @@ if ($null -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)
         throw "$($result.FailedCount) integration tests failed."
     }
 }
+

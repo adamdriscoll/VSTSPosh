@@ -7,6 +7,11 @@
 - Master: [![Master](https://ci.appveyor.com/api/projects/status/2fc84qwbsidtgvfq/branch/master?svg=true)](https://ci.appveyor.com/project/adamdriscoll/vstsposh/branch/master)
 - Development: [![Development](https://ci.appveyor.com/api/projects/status/2fc84qwbsidtgvfq/branch/develop?svg=true)](https://ci.appveyor.com/project/adamdriscoll/vstsposh/branch/develop)
 
+## Code Coverage
+
+- Master:
+- Development:
+
 ## Cmdlets
 
 - Session
@@ -33,6 +38,7 @@
   - Git
     - New-VstsGitRepository
     - Get-VstsGitRepository
+    - Remove-VstsGitRepository
     - ConvertTo-VstsGitRepository
 - Release
   - Get-VstsRelease

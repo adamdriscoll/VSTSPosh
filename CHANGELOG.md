@@ -15,6 +15,10 @@
   module.
 - Visual Studio Code Workspace settings:
   - Added to ensure style guidelines matched when using VSCode.
+- Improved AppVeyor build to get Pester from PSGallery instead
+  of Chocolatey so that latest version is used.
+- Increased integration test scenarios/stories.
+- Added codecov.io support to report on code coverage.
 - Get-VstsEndpointUri Cmdlet:
   - Added function to return the VSTS endpoint URI builder object.
 - Get-VstsQueryStringParametersFromBound Cmdlet:
