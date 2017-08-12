@@ -33,8 +33,8 @@
   - Get-VstsBuildArtifacts
 - Code
   - Policy
-    - Get-VstsCodePolicy
-    - New-VstsCodePolicy
+    - Get-VstsCodePolicyConfiguration
+    - New-VstsCodePolicyConfiguration
   - Git
     - New-VstsGitRepository
     - Get-VstsGitRepository

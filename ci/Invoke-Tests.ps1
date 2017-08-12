@@ -47,20 +47,8 @@ $result = Invoke-Pester `
 
 if ($env:APPVEYOR -eq $true)
 {
+    Write-Verbose -Message 'Uploading Unit Test results to AppVeyor...' -Verbose
     (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $unitTestResultsPath)
-
-        # Upload code coverage
-    if ($result.CodeCoverage)
-    {
-        Write-Info -Message 'Uploading CodeCoverage to CodeCov.io...'
-        Import-Module -Name (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath '\Support\CodeCovIo.psd1')
-        $jsonPath = Export-CodeCovIoJson -CodeCoverage $result.CodeCoverage -repoRoot $env:APPVEYOR_BUILD_FOLDER
-        Invoke-UploadCoveCoveIoReport -Path $jsonPath
-    }
-    else
-    {
-        Write-Warning -Message 'Could not create CodeCov.io report because pester results object did not contain a CodeCoverage object'
-    }
 }
 
 if ($result.FailedCount -gt 0)
@@ -85,7 +73,21 @@ if ($null -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)
 
     if ($env:APPVEYOR -eq $true)
     {
+        Write-Verbose -Message 'Uploading Integration Test results to AppVeyor...' -Verbose
         (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", $integrationTestResultsPath)
+
+        # Upload code coverage
+        if ($result.CodeCoverage)
+        {
+            Write-Verbose -Message 'Uploading CodeCoverage to CodeCov.io...' -Verbose
+            Import-Module -Name (Join-Path -Path $PSScriptRoot -ChildPath 'CodeCovIo.psd1')
+            $jsonPath = Export-CodeCovIoJson -CodeCoverage $result.CodeCoverage -repoRoot $env:APPVEYOR_BUILD_FOLDER
+            Invoke-UploadCoveCoveIoReport -Path $jsonPath
+        }
+        else
+        {
+            Write-Warning -Message 'Could not create CodeCov.io report because pester results object did not contain a CodeCoverage object'
+        }
     }
 
     if ($result.FailedCount -gt 0)

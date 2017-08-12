@@ -19,6 +19,7 @@
   of Chocolatey so that latest version is used.
 - Increased integration test scenarios/stories.
 - Added codecov.io support to report on code coverage.
+- Moved all functions for continuous integration into `ci` folder.
 - Get-VstsEndpointUri Cmdlet:
   - Added function to return the VSTS endpoint URI builder object.
 - Get-VstsQueryStringParametersFromBound Cmdlet:

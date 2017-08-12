@@ -16,13 +16,13 @@ install:
 version: 1.0.{build}
 
 build_script:
-- ps: .\CreateModuleManifest.ps1
+- ps: .\ci\New-ModuleManifest.ps1
 
 test_script:
-- ps: .\InvokeTests.ps1
+- ps: .\ci\Invoke-Tests.ps1
 
 deploy_script:
-- ps: .\PublishModule.ps1
+- ps: .\ci\Publish-Module.ps1
 
 environment:
   ApiKey:
