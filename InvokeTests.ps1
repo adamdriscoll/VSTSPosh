@@ -1,39 +1,78 @@
+$repoPath = $PSScriptRoot
+
 if ($PSVersionTable.PSVersion.Major -ge 5)
 {
-    Write-Verbose -Verbose "Installing PSScriptAnalyzer"
-    $PSScriptAnalyzerModuleName = "PSScriptAnalyzer"
-    Install-PackageProvider -Name NuGet -Force 
-    Install-Module -Name $PSScriptAnalyzerModuleName -Scope CurrentUser -Force 
-    $PSScriptAnalyzerModule = get-module -Name $PSScriptAnalyzerModuleName -ListAvailable
-    if ($PSScriptAnalyzerModule) {
-        # Import the module if it is available
-        $PSScriptAnalyzerModule | Import-Module -Force
-    }
-    else
+    Write-Verbose -Message 'Installing PSScriptAnalyzer' -Verbose
+    $PSScriptAnalyzerModuleName = 'PSScriptAnalyzer'
+    $PSScriptAnalyzerModule = Get-Module -Name $PSScriptAnalyzerModuleName -ListAvailable
+    if (-not $PSScriptAnalyzerModule)
     {
-        # Module could not/would not be installed - so warn user that tests will fail.
-        Write-Warning -Message ( @(
-            "The 'PSScriptAnalyzer' module is not installed. "
-            "The 'PowerShell modules scriptanalyzer' Pester test will fail "
-            ) -Join '' )
+        Install-PackageProvider -Name NuGet -Force
+        Install-Module -Name $PSScriptAnalyzerModuleName -Scope CurrentUser -Force
+        $PSScriptAnalyzerModule = Get-Module -Name $PSScriptAnalyzerModuleName -ListAvailable
+
+        if ($PSScriptAnalyzerModule)
+        {
+            # Import the module if it is available
+            $PSScriptAnalyzerModule | Import-Module -Force
+        }
+        else
+        {
+            # Module could not/would not be installed - so warn user that tests will fail.
+            Write-Warning -Message ( @(
+                    "The 'PSScriptAnalyzer' module is not installed. "
+                    "The 'PowerShell modules scriptanalyzer' Pester test will fail."
+                ) -Join '' )
+        }
     }
 }
 else
 {
-    Write-Verbose -Verbose "Skipping installation of PSScriptAnalyzer since it requires PSVersion 5.0 or greater. Used PSVersion: $($PSVersion)"
+    Write-Warning -Message ( @(
+            "Skipping installation of 'PSScriptAnalyzer' since it requires "
+            "PSVersion 5.0 or greater. Found PSVersion: $($PSVersionTable.PSVersion.Major)"
+        ) -Join '' )
 }
 
-if ($env:APPVEYOR_PULL_REQUEST_NUMBER -eq $null)
+# Always run unit tests first
+$result = Invoke-Pester `
+    -Path (Join-Path -Path $repoPath -ChildPath 'Tests') `
+    -OutputFormat NUnitXml `
+    -OutputFile (Join-Path -Path $repoPath -ChildPath 'TestsResults.Unit.xml')  `
+    -PassThru `
+    -Tag Unit
+
+if ($env:APPVEYOR -eq $true)
 {
-    $res = Invoke-Pester -Path ".\Tests" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru -Tag Integration -CodeCoverage '.\*.psm1'
-    (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\TestsResults.xml))
-    if ($res.FailedCount -gt 0) { 
-        throw "$($res.FailedCount) integration tests failed."
-    }
+    (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Join-Path -Path $repoPath -ChildPath 'TestsResults.Unit.xml'))
 }
 
-$res = Invoke-Pester -Path ".\Tests" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru -Tag Unit
-(New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\TestsResults.xml))
-if ($res.FailedCount -gt 0) { 
-	throw "$($res.FailedCount) unit tests failed."
+if ($result.FailedCount -gt 0)
+{
+    throw "$($result.FailedCount) unit tests failed."
+}
+
+# Run integration tests if not a PR or if run manually
+if ($null -eq $env:APPVEYOR_PULL_REQUEST_NUMBER)
+{
+    $result = Invoke-Pester `
+        -Path (Join-Path -Path $repoPath -ChildPath 'Tests') `
+        -OutputFormat NUnitXml `
+        -OutputFile (Join-Path -Path $repoPath -ChildPath 'TestsResults.Integration.xml') `
+        -PassThru `
+        -Tag Integration `
+        -CodeCoverage @(
+            (Join-Path -Path $repoPath -ChildPath '*.psm1')
+            (Join-Path -Path $repoPath -ChildPath 'lib\*.ps1')
+        )
+
+    if ($env:APPVEYOR -eq $true)
+    {
+        (New-Object "System.Net.WebClient").UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Join-Path -Path $repoPath -ChildPath 'TestsResults.Integration.xml'))
+    }
+
+    if ($result.FailedCount -gt 0)
+    {
+        throw "$($result.FailedCount) integration tests failed."
+    }
 }

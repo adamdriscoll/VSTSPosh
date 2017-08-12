@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<test-results xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="nunit_schema_2.5.xsd" name="Pester" total="12" errors="0" failures="0" not-run="0" inconclusive="0" ignored="0" skipped="0" invalid="0" date="2017-08-12" time="21:09:55">
+  <environment user="Dan" machine-name="PLAGUE02" cwd="C:\Users\Dan\Source\GitHub\VSTSPosh" user-domain="PLAGUE02" platform="Microsoft Windows 10 Enterprise|C:\WINDOWS|\Device\Harddisk1\Partition4" nunit-version="2.5.8.0" os-version="10.0.15063" clr-version="4.0.30319.42000" />
+  <culture-info current-culture="en-NZ" current-uiculture="en-US" />
+  <test-suite type="TestFixture" name="Pester" executed="True" result="Success" success="True" time="1.1445" asserts="0" description="Pester">
+    <results>
+      <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\Tests\Builds.tests.ps1" executed="True" result="Success" success="True" time="0" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\Tests\Builds.tests.ps1">
+        <results />
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\Tests\Code.tests.ps1" executed="True" result="Success" success="True" time="0" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\Tests\Code.tests.ps1">
+        <results />
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\Tests\Projects.tests.ps1" executed="True" result="Success" success="True" time="0" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\Tests\Projects.tests.ps1">
+        <results />
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\Tests\Unit.tests.ps1" executed="True" result="Success" success="True" time="1.1445" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\Tests\Unit.tests.ps1">
+        <results>
+          <test-suite type="TestFixture" name="VSTS" executed="True" result="Success" success="True" time="1.1445" asserts="0" description="VSTS">
+            <results>
+              <test-suite type="TestFixture" name="PSScriptAnalyzer" executed="True" result="Success" success="True" time="1.1445" asserts="0" description="PSScriptAnalyzer">
+                <results>
+                  <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\VSTS.psm1" executed="True" result="Success" success="True" time="0.3356" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\VSTS.psm1">
+                    <results>
+                      <test-case description="Should pass all error-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\VSTS.psm1.Should pass all error-level PS Script Analyzer rules" time="0.2549" asserts="0" success="True" result="Success" executed="True" />
+                      <test-case description="Should pass all warning-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\VSTS.psm1.Should pass all warning-level PS Script Analyzer rules" time="0.0806" asserts="0" success="True" result="Success" executed="True" />
+                    </results>
+                  </test-suite>
+                  <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Builds.ps1" executed="True" result="Success" success="True" time="0.1402" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Builds.ps1">
+                    <results>
+                      <test-case description="Should pass all error-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Builds.ps1.Should pass all error-level PS Script Analyzer rules" time="0.082" asserts="0" success="True" result="Success" executed="True" />
+                      <test-case description="Should pass all warning-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Builds.ps1.Should pass all warning-level PS Script Analyzer rules" time="0.0582" asserts="0" success="True" result="Success" executed="True" />
+                    </results>
+                  </test-suite>
+                  <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Code.ps1" executed="True" result="Success" success="True" time="0.1749" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Code.ps1">
+                    <results>
+                      <test-case description="Should pass all error-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Code.ps1.Should pass all error-level PS Script Analyzer rules" time="0.0773" asserts="0" success="True" result="Success" executed="True" />
+                      <test-case description="Should pass all warning-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Code.ps1.Should pass all warning-level PS Script Analyzer rules" time="0.0976" asserts="0" success="True" result="Success" executed="True" />
+                    </results>
+                  </test-suite>
+                  <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Projects.ps1" executed="True" result="Success" success="True" time="0.1537" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Projects.ps1">
+                    <results>
+                      <test-case description="Should pass all error-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Projects.ps1.Should pass all error-level PS Script Analyzer rules" time="0.0805" asserts="0" success="True" result="Success" executed="True" />
+                      <test-case description="Should pass all warning-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Projects.ps1.Should pass all warning-level PS Script Analyzer rules" time="0.0733" asserts="0" success="True" result="Success" executed="True" />
+                    </results>
+                  </test-suite>
+                  <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Releases.ps1" executed="True" result="Success" success="True" time="0.1811" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Releases.ps1">
+                    <results>
+                      <test-case description="Should pass all error-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Releases.ps1.Should pass all error-level PS Script Analyzer rules" time="0.1085" asserts="0" success="True" result="Success" executed="True" />
+                      <test-case description="Should pass all warning-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Releases.ps1.Should pass all warning-level PS Script Analyzer rules" time="0.0726" asserts="0" success="True" result="Success" executed="True" />
+                    </results>
+                  </test-suite>
+                  <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Workitems.ps1" executed="True" result="Success" success="True" time="0.159" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Workitems.ps1">
+                    <results>
+                      <test-case description="Should pass all error-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Workitems.ps1.Should pass all error-level PS Script Analyzer rules" time="0.0815" asserts="0" success="True" result="Success" executed="True" />
+                      <test-case description="Should pass all warning-level PS Script Analyzer rules" name="VSTS.PSScriptAnalyzer.C:\Users\Dan\Source\GitHub\VSTSPosh\lib\Workitems.ps1.Should pass all warning-level PS Script Analyzer rules" time="0.0776" asserts="0" success="True" result="Success" executed="True" />
+                    </results>
+                  </test-suite>
+                </results>
+              </test-suite>
+              <test-suite type="TestFixture" name="New-VstsSession" executed="True" result="Success" success="True" time="0" asserts="0" description="New-VstsSession">
+                <results />
+              </test-suite>
+            </results>
+          </test-suite>
+        </results>
+      </test-suite>
+      <test-suite type="TestFixture" name="C:\Users\Dan\Source\GitHub\VSTSPosh\Tests\WorkItems.tests.ps1" executed="True" result="Success" success="True" time="0" asserts="0" description="C:\Users\Dan\Source\GitHub\VSTSPosh\Tests\WorkItems.tests.ps1">
+        <results />
+      </test-suite>
+    </results>
+  </test-suite>
+</test-results>
