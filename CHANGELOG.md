@@ -127,6 +127,7 @@
   - Added CmdletBinding and other PowerShell best practice changes.
 - Remove-VstsGitRepository Cmdlet:
   - Added cmdlet to delete repositories.
+  - Unit tests completed.
 
 ## 1.0.0.0
 

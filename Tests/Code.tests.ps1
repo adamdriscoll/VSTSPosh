@@ -46,6 +46,7 @@ Describe 'Code' -Tags 'Unit' {
 
         $testProject = 'testProject'
         $testRepository = 'testRepository'
+        $testRepositoryId = [Guid]::NewGuid().Guid
 
         $mockReturnOKString = 'Result OK'
         $mockReturnOKObject = [psobject] @{
@@ -70,7 +71,7 @@ Describe 'Code' -Tags 'Unit' {
                 Context 'Session Object passed' {
                     $getVstsGitRepositoryParameters = $testSessionParameters.Clone()
                     $getVstsGitRepositoryParameters += @{
-                        Project = $testProject
+                        Project    = $testProject
                         Repository = $testRepository
                     }
 
@@ -90,7 +91,7 @@ Describe 'Code' -Tags 'Unit' {
                 Context 'Account Details passed' {
                     $getVstsGitRepositoryParameters = $testAccountParameters.Clone()
                     $getVstsGitRepositoryParameters += @{
-                        Project = $testProject
+                        Project    = $testProject
                         Repository = $testRepository
                     }
 
@@ -209,6 +210,161 @@ Describe 'Code' -Tags 'Unit' {
 
                     It 'Should call expected mocks' {
                         Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+            }
+        }
+
+        Context 'Test Remove-VstsGitRepository' {
+            Context 'Both Project and Repository Id passed' {
+                Context 'Session Object passed' {
+                    $removeVstsGitRepositoryParameters = $testSessionParameters.Clone()
+                    $removeVstsGitRepositoryParameters += @{
+                        Project    = $testProject
+                        Repository = $testRepositoryId
+                    }
+
+                    It 'Should throw an exception' {
+                        { $script:removeVstsGitRepositoryResult = Remove-VstsGitRepository @removeVstsGitRepositoryParameters } | Should Throw 'If repository Id is passed then Project should not be passed.'
+                    }
+                }
+
+                Context 'Account Details passed' {
+                    $removeVstsGitRepositoryParameters = $testAccountParameters.Clone()
+                    $removeVstsGitRepositoryParameters += @{
+                        Project    = $testProject
+                        Repository = $testRepositoryId
+                    }
+
+                    It 'Should throw an exception' {
+                        { $script:removeVstsGitRepositoryResult = Remove-VstsGitRepository @removeVstsGitRepositoryParameters } | Should Throw 'If repository Id is passed then Project should not be passed.'
+                    }
+                }
+            }
+
+            Context 'Repository Id passed' {
+                BeforeEach {
+                    Mock `
+                        -CommandName Invoke-VstsEndpoint `
+                        -ParameterFilter {
+                            $Session.AccountName -eq $testSessionObject.AccountName -and `
+                            $Session.User -eq $testSessionObject.User -and `
+                            $Session.Token -eq $testSessionObject.Token -and `
+                            $Path -eq ('git/repositories/{0}' -f $testRepositoryId) -and `
+                            $Method -eq 'DELETE'
+                        }
+                }
+
+                Context 'Session Object passed' {
+                    $removeVstsGitRepositoryParameters = $testSessionParameters.Clone()
+                    $removeVstsGitRepositoryParameters += @{
+                        Repository = $testRepositoryId
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:removeVstsGitRepositoryResult = Remove-VstsGitRepository @removeVstsGitRepositoryParameters } | Should Not Throw
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+
+                Context 'Account Details passed' {
+                    $removeVstsGitRepositoryParameters = $testAccountParameters.Clone()
+                    $removeVstsGitRepositoryParameters += @{
+                        Repository = $testRepositoryId
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:removeVstsGitRepositoryResult = Remove-VstsGitRepository @removeVstsGitRepositoryParameters } | Should Not Throw
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+            }
+
+            Context 'Repository and Project passed' {
+                BeforeEach {
+                    Mock `
+                        -CommandName Invoke-VstsEndpoint `
+                        -ParameterFilter {
+                            $Session.AccountName -eq $testSessionObject.AccountName -and `
+                            $Session.User -eq $testSessionObject.User -and `
+                            $Session.Token -eq $testSessionObject.Token -and `
+                            $Path -eq ('git/repositories/{0}' -f $testRepositoryId) -and `
+                            $Method -eq 'DELETE'
+                        }
+
+                    Mock `
+                        -CommandName Get-VstsGitRepository `
+                        -ParameterFilter {
+                            $Session.AccountName -eq $testSessionObject.AccountName -and `
+                            $Session.User -eq $testSessionObject.User -and `
+                            $Session.Token -eq $testSessionObject.Token -and `
+                            $Project -eq $testProject -and `
+                            $Repository -eq $testRepository
+                        } `
+                        -MockWith { @{ id = $testRepositoryId } }
+                    }
+
+                Context 'Session Object passed' {
+                    $removeVstsGitRepositoryParameters = $testSessionParameters.Clone()
+                    $removeVstsGitRepositoryParameters += @{
+                        Project    = $testProject
+                        Repository = $testRepository
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:removeVstsGitRepositoryResult = Remove-VstsGitRepository @removeVstsGitRepositoryParameters } | Should Not Throw
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                        Assert-MockCalled -CommandName Get-VstsGitRepository -Exactly -Times 1
+                    }
+                }
+
+                Context 'Account Details passed' {
+                    $removeVstsGitRepositoryParameters = $testAccountParameters.Clone()
+                    $removeVstsGitRepositoryParameters += @{
+                        Project    = $testProject
+                        Repository = $testRepository
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:removeVstsGitRepositoryResult = Remove-VstsGitRepository @removeVstsGitRepositoryParameters } | Should Not Throw
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                        Assert-MockCalled -CommandName Get-VstsGitRepository -Exactly -Times 1
+                    }
+                }
+            }
+
+            Context 'Only Repository passed' {
+                Context 'Session Object passed' {
+                    $removeVstsGitRepositoryParameters = $testSessionParameters.Clone()
+                    $removeVstsGitRepositoryParameters += @{
+                        Repository = $testRepository
+                    }
+
+                    It 'Should throw an exception' {
+                        { $script:removeVstsGitRepositoryResult = Remove-VstsGitRepository @removeVstsGitRepositoryParameters } | Should Throw 'If repository Name is passed then Project must be passed.'
+                    }
+                }
+
+                Context 'Account Details passed' {
+                    $removeVstsGitRepositoryParameters = $testAccountParameters.Clone()
+                    $removeVstsGitRepositoryParameters += @{
+                        Repository = $testRepository
+                    }
+
+                    It 'Should throw an exception' {
+                        { $script:removeVstsGitRepositoryResult = Remove-VstsGitRepository @removeVstsGitRepositoryParameters } | Should Throw 'If repository Name is passed then Project must be passed.'
                     }
                 }
             }
