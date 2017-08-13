@@ -165,6 +165,7 @@ function Get-VstsEndpointUri
         [Parameter(Mandatory = $true)]
         $Session,
 
+        [Parameter()]
         [String] $EndpointName
     )
 
