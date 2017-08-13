@@ -22,6 +22,7 @@
 - Moved all functions for continuous integration into `ci` folder.
 - Get-VstsEndpointUri Cmdlet:
   - Added function to return the VSTS endpoint URI builder object.
+  - Added unit tests.
 - Get-VstsQueryStringParametersFromBound Cmdlet:
   - Added function to support additional parameters and queries.
   - Added unit tests.
