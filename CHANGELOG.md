@@ -28,6 +28,8 @@
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
+  - Added unit tests.
+  - Added parameter sets for VSTS and TFS.
 - Invoke-VstsEndpoint Cmdlet:
   - Added documentation.
   - Added support for alternate endpoint names to support VSRM

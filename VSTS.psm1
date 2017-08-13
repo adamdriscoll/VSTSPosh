@@ -11,7 +11,7 @@ $libs = Get-ChildItem `
     -Include '*.ps1' `
     -Recurse
 $libs.Foreach(
- {
+    {
         Write-Verbose -Message ('Importing the lib file {0}' -f $_.Fullname)
         . $_.Fullname
     }
@@ -41,7 +41,8 @@ $libs.Foreach(
 
     .PARAMETER Server
     The name of the VSTS or TFS Server to connect to.
-    For VSTS this will be 'visualstudio.com'. The default value
+    For VSTS this will be 'visualstudio.com', but for TFS
+    this should be set to the TFS server. The default value
     if this is not specified is 'visualstudio.com'.
 
     .PARAMETER HTTPS
@@ -53,29 +54,39 @@ $libs.Foreach(
 #>
 function New-VstsSession
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'VSTS')]
     [OutputType([PSCustomObject])]
     param
     (
-        [Parameter()]
+        [Parameter(Mandatory = $true, ParameterSetName = 'VSTS')]
+        [ValidateNotNullOrEmpty()]
         [String] $AccountName,
 
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [String] $User,
 
         [Parameter(Mandatory = $true)]
+        [ValidateNotNullOrEmpty()]
         [String] $Token,
 
         [Parameter()]
+        [ValidateNotNullOrEmpty()]
         [String] $Collection = 'DefaultCollection',
 
-        [Parameter()]
-        [String] $Server = 'visualstudio.com',
+        [Parameter(Mandatory = $true, ParameterSetName = 'TFS')]
+        [ValidateNotNullOrEmpty()]
+        [String] $Server,
 
         [Parameter()]
         [ValidateSet('HTTP', 'HTTPS')]
         [String] $Scheme = 'HTTPS'
     )
+
+    if ($PSCmdlet.ParameterSetName -eq 'VSTS')
+    {
+        $Server = 'visualstudio.com'
+    }
 
     [PSCustomObject] @{
         AccountName = $AccountName
