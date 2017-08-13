@@ -129,6 +129,8 @@
 - Remove-VstsGitRepository Cmdlet:
   - Added cmdlet to delete repositories.
   - Unit tests completed.
+- Get-VstsBuildTag Cmdlet:
+  - Added cmdlet to get build tags from a build or entire project.
 
 ## 1.0.0.0
 
