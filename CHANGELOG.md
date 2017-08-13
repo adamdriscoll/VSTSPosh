@@ -22,12 +22,16 @@
 - Moved all functions for continuous integration into `ci` folder.
 - Get-VstsEndpointUri Cmdlet:
   - Added function to return the VSTS endpoint URI builder object.
+  - Added unit tests.
 - Get-VstsQueryStringParametersFromBound Cmdlet:
   - Added function to support additional parameters and queries.
+  - Added unit tests.
 - New-VstsSession Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
+  - Added unit tests.
+  - Added parameter sets for VSTS and TFS.
 - Invoke-VstsEndpoint Cmdlet:
   - Added documentation.
   - Added support for alternate endpoint names to support VSRM
@@ -38,6 +42,7 @@
 - Get-VstsAuthorization Cmdlet:
   - Added documentation.
   - Added CmdletBinding and other PowerShell best practice changes.
+  - Added unit tests.
 - Get-VstsProject Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
@@ -107,17 +112,22 @@
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
+  - Added unit tests.
+  - Changed Input parameter name to Guid because Input is a reserved
+    word.
 - Get-VstsGitRepository Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
   - Added repository parameter to filter on repository id or name.
+  - Unit tests completed.
 - New-VstsGitRepository Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
 - Remove-VstsGitRepository Cmdlet:
   - Added cmdlet to delete repositories.
+  - Unit tests completed.
 
 ## 1.0.0.0
 

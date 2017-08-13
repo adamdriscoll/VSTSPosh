@@ -169,7 +169,7 @@ function New-VstsGitRepository
     $path = 'git/repositories'
 
     # Ensure we have what looks like a Project Id Guid.
-    if (Test-Guid -Input $Project)
+    if (Test-Guid -Guid $Project)
     {
         $projectId = $Project
     }
@@ -263,7 +263,7 @@ function Remove-VstsGitRepository
     }
 
     # Make sure the Repository Id Guid is available
-    if (Test-Guid -Input $Repository)
+    if (Test-Guid -Guid $Repository)
     {
         if ($PSBoundParameters.ContainsKey('Project'))
         {
