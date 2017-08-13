@@ -1,7 +1,7 @@
 ﻿$moduleRoot = Split-Path -Path $PSScriptRoot -Parent
 $modulePath = Join-Path -Path $moduleRoot -ChildPath 'VSTS.psm1'
 
-Describe 'VSTS' -Tags 'Unit' {
+Describe 'VSTS' -Tags 'Unit','Quality','PSSA' {
     Context 'PSScriptAnalyzer' {
         if ($PSVersionTable.PSVersion.Major -ge 5)
         {

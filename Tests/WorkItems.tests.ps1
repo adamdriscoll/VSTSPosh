@@ -7,7 +7,16 @@ function New-ProjectName
     [Guid]::NewGuid().ToString().Replace('-', '').Substring(10)
 }
 
-Import-Module -Name (Join-Path $PSScriptRoot '..\VSTS.psm1') -Force
+$moduleRoot = Split-Path -Path $PSScriptRoot -Parent
+$modulePath = Join-Path -Path $moduleRoot -ChildPath 'VSTS.psm1'
+Import-Module -Name $modulePath -Force
+
+Describe 'Code' -Tags 'Unit' {
+    InModuleScope -ModuleName VSTS {
+        # All unit tests run in VSTS module scope
+
+    }
+}
 
 Describe 'Work items' -Tags 'Integration' {
     BeforeAll {
