@@ -112,6 +112,7 @@
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
   - Added repository parameter to filter on repository id or name.
+  - Unit tests completed.
 - New-VstsGitRepository Cmdlet:
   - Added documentation.
   - Style consistency cleanup.

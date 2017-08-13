@@ -13,8 +13,205 @@ Import-Module -Name $modulePath -Force
 
 Describe 'Code' -Tags 'Unit' {
     InModuleScope -ModuleName VSTS {
-        # All unit tests run in VSTS module scope
+        # Prep mock objects and parameters
+        $testAccountName = 'testAccount'
+        $testUser = 'testUser'
+        $testToken = 'testToken'
+        $testCollection = 'DefaultCollection'
+        $testServer = 'visualstudio.com'
+        $testScheme = 'HTTPS'
 
+        $testSessionObject = [PSCustomObject] @{
+            AccountName = $testAccountName
+            User        = $testUser
+            Token       = $testToken
+            Collection  = $testCollection
+            Server      = $testServer
+            Scheme      = $testScheme
+        }
+
+        $testSessionParameters = @{
+            Session = $testSessionObject
+            Verbose = $True
+        }
+
+        $testAccountParameters = @{
+            AccountName = $testAccountName
+            User        = $testUser
+            Token       = $testToken
+            Verbose     = $True
+        }
+
+        $testProject = 'testProject'
+        $testRepository = 'testRepository'
+
+        $mockReturnOKString = 'Result OK'
+        $mockReturnOKObject = [psobject] @{
+            Value = $mockReturnOKString
+        }
+
+        # All unit tests run in VSTS module scope
+        Context 'Test Get-VstsGitRepository' {
+            Context 'Both Project and Repository passed' {
+                BeforeEach {
+                    Mock `
+                        -CommandName Invoke-VstsEndpoint `
+                        -ParameterFilter {
+                            $Session.AccountName -eq $testSessionObject.AccountName -and `
+                            $Session.User -eq $testSessionObject.User -and `
+                            $Session.Token -eq $testSessionObject.Token -and `
+                            $Project -eq $testProject -and `
+                            $Path -eq ('git/repositories/{0}' -f $testRepository)
+                        } `
+                        -MockWith { $mockReturnOKObject }
+                }
+
+                Context 'Session Object passed' {
+                    $getVstsGitRepositoryParameters = $testSessionParameters.Clone()
+                    $getVstsGitRepositoryParameters += @{
+                        Project = $testProject
+                        Repository = $testRepository
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:getVstsGitRepositoryResult = Get-VstsGitRepository @getVstsGitRepositoryParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected object' {
+                        $script:getVstsGitRepositoryResult | Should Be $mockReturnOKString
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+
+                Context 'Account Details passed' {
+                    $getVstsGitRepositoryParameters = $testAccountParameters.Clone()
+                    $getVstsGitRepositoryParameters += @{
+                        Project = $testProject
+                        Repository = $testRepository
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:getVstsGitRepositoryResult = Get-VstsGitRepository @getVstsGitRepositoryParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected object' {
+                        $script:getVstsGitRepositoryResult | Should Be $mockReturnOKString
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+            }
+
+            Context 'Only Project passed' {
+                BeforeEach {
+                    Mock `
+                        -CommandName Invoke-VstsEndpoint `
+                        -ParameterFilter {
+                            $Session.AccountName -eq $testSessionObject.AccountName -and `
+                            $Session.User -eq $testSessionObject.User -and `
+                            $Session.Token -eq $testSessionObject.Token -and `
+                            $Project -eq $testProject -and `
+                            $Path -eq 'git/repositories'
+                        } `
+                        -MockWith { $mockReturnOKObject }
+                }
+
+                Context 'Session Object passed' {
+                    $getVstsGitRepositoryParameters = $testSessionParameters.Clone()
+                    $getVstsGitRepositoryParameters += @{
+                        Project = $testProject
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:getVstsGitRepositoryResult = Get-VstsGitRepository @getVstsGitRepositoryParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected object' {
+                        $script:getVstsGitRepositoryResult | Should Be $mockReturnOKString
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+
+                Context 'Account Details passed' {
+                    $getVstsGitRepositoryParameters = $testAccountParameters.Clone()
+                    $getVstsGitRepositoryParameters += @{
+                        Project = $testProject
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:getVstsGitRepositoryResult = Get-VstsGitRepository @getVstsGitRepositoryParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected object' {
+                        $script:getVstsGitRepositoryResult | Should Be $mockReturnOKString
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+            }
+
+            Context 'Only repository passed' {
+                BeforeEach {
+                    Mock `
+                        -CommandName Invoke-VstsEndpoint `
+                        -ParameterFilter {
+                            $Session.AccountName -eq $testSessionObject.AccountName -and `
+                            $Session.User -eq $testSessionObject.User -and `
+                            $Session.Token -eq $testSessionObject.Token -and `
+                            $Path -eq ('git/repositories/{0}' -f $testRepository)
+                        } `
+                        -MockWith { $mockReturnOKObject }
+                }
+
+                Context 'Session Object passed' {
+                    $getVstsGitRepositoryParameters = $testSessionParameters.Clone()
+                    $getVstsGitRepositoryParameters += @{
+                        Repository = $testRepository
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:getVstsGitRepositoryResult = Get-VstsGitRepository @getVstsGitRepositoryParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected object' {
+                        $script:getVstsGitRepositoryResult | Should Be $mockReturnOKString
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+
+                Context 'Account Details passed' {
+                    $getVstsGitRepositoryParameters = $testAccountParameters.Clone()
+                    $getVstsGitRepositoryParameters += @{
+                        Repository = $testRepository
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:getVstsGitRepositoryResult = Get-VstsGitRepository @getVstsGitRepositoryParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected object' {
+                        $script:getVstsGitRepositoryResult | Should Be $mockReturnOKString
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+            }
+        }
     }
 }
 
