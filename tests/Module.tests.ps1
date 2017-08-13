@@ -1,7 +1,8 @@
 ﻿$moduleRoot = Split-Path -Path $PSScriptRoot -Parent
 $modulePath = Join-Path -Path $moduleRoot -ChildPath 'VSTS.psm1'
+Import-Module -Name $modulePath -Force
 
-Describe 'VSTS' -Tags 'Unit','Quality','PSSA' {
+Describe 'VSTS' -Tags 'Unit', 'Quality', 'PSSA' {
     Context 'PSScriptAnalyzer' {
         if ($PSVersionTable.PSVersion.Major -ge 5)
         {
@@ -63,6 +64,89 @@ Describe 'VSTS' -Tags 'Unit','Quality','PSSA' {
         else
         {
             Write-Warning -Message "Skipping ScriptAnalyzer since not PowerShell 5"
+        }
+    }
+}
+
+Describe 'VSTS' -Tags 'Unit' {
+    InModuleScope -ModuleName VSTS {
+        # All unit tests run in VSTS module scope
+
+        # Prep mock objects and parameters
+        $testAccountName = 'testAccount'
+        $testUser = 'testUser'
+        $testToken = 'testToken'
+        $testCollection = 'testCollection'
+        $testServer = 'testserver.com'
+        $testScheme = 'HTTP'
+
+        Context 'Test New-VstsSession' {
+            Context 'AccountName, User and Token Specified' {
+                $newVstsSessionParameters = @{
+                    AccountName = $testAccountName
+                    User        = $testUser
+                    Token       = $testToken
+                }
+
+                It 'Should not throw an exception' {
+                    { $script:newVstsSessionResult = New-VstsSession @newVstsSessionParameters } | Should Not Throw
+                }
+
+                It 'Should return expected object' {
+                    $script:newVstsSessionResult.AccountName | Should Be $testAccountName
+                    $script:newVstsSessionResult.User        | Should Be $testUser
+                    $script:newVstsSessionResult.Token       | Should Be $testToken
+                    $script:newVstsSessionResult.Collection  | Should Be 'DefaultCollection'
+                    $script:newVstsSessionResult.Server      | Should Be 'visualstudio.com'
+                    $script:newVstsSessionResult.Scheme      | Should Be 'HTTPS'
+                }
+            }
+
+            Context 'AccountName, Collection, Scheme, User and Token Specified' {
+                $newVstsSessionParameters = @{
+                    AccountName = $testAccountName
+                    User        = $testUser
+                    Token       = $testToken
+                    Collection  = $testCollection
+                    Scheme      = $testScheme
+                }
+
+                It 'Should not throw an exception' {
+                    { $script:newVstsSessionResult = New-VstsSession @newVstsSessionParameters } | Should Not Throw
+                }
+
+                It 'Should return expected object' {
+                    $script:newVstsSessionResult.AccountName | Should Be $testAccountName
+                    $script:newVstsSessionResult.User        | Should Be $testUser
+                    $script:newVstsSessionResult.Token       | Should Be $testToken
+                    $script:newVstsSessionResult.Collection  | Should Be $testCollection
+                    $script:newVstsSessionResult.Server      | Should Be 'visualstudio.com'
+                    $script:newVstsSessionResult.Scheme      | Should Be $testScheme
+                }
+            }
+
+            Context 'Server, Collection, Scheme, User and Token Specified' {
+                $newVstsSessionParameters = @{
+                    User        = $testUser
+                    Token       = $testToken
+                    Collection  = $testCollection
+                    Server      = $testServer
+                    Scheme      = $testScheme
+                }
+
+                It 'Should not throw an exception' {
+                    { $script:newVstsSessionResult = New-VstsSession @newVstsSessionParameters } | Should Not Throw
+                }
+
+                It 'Should return expected object' {
+                    $script:newVstsSessionResult.AccountName | Should BeNullOrEmpty
+                    $script:newVstsSessionResult.User        | Should Be $testUser
+                    $script:newVstsSessionResult.Token       | Should Be $testToken
+                    $script:newVstsSessionResult.Collection  | Should Be $testCollection
+                    $script:newVstsSessionResult.Server      | Should Be $testServer
+                    $script:newVstsSessionResult.Scheme      | Should Be $testScheme
+                }
+            }
         }
     }
 }
