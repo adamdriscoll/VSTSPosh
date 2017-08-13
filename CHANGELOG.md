@@ -58,6 +58,7 @@
   - Added AccountName, User and Token parameters.
   - Added State parameter to enable waiting for a project to enter
     a specific state.
+  - Refactored to improve verbose logging and edge case handling.
 - New-VSTSProject Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
