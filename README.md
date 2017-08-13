@@ -28,6 +28,7 @@ dev | [![Development](https://ci.appveyor.com/api/projects/status/2fc84qwbsidtgv
   - Get-VstsBuildDefinition
   - New-vstsBuild
   - Get-VstsBuildArtifacts
+  - Get-VstsBuildTag
 - Code
   - Policy
     - Get-VstsCodePolicyConfiguration

@@ -58,6 +58,7 @@
   - Added AccountName, User and Token parameters.
   - Added State parameter to enable waiting for a project to enter
     a specific state.
+  - Refactored to improve verbose logging and edge case handling.
 - New-VSTSProject Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
@@ -127,6 +128,13 @@
   - Added CmdletBinding and other PowerShell best practice changes.
 - Remove-VstsGitRepository Cmdlet:
   - Added cmdlet to delete repositories.
+  - Unit tests completed.
+- Get-VstsBuildTag Cmdlet:
+  - Added cmdlet to get build tags from a build or entire project.
+- Get-VstsBuildDefinition Cmdlet:
+  - Added documentation.
+  - Style consistency cleanup.
+  - Added CmdletBinding and other PowerShell best practice changes.
   - Unit tests completed.
 
 ## 1.0.0.0

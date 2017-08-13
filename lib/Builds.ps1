@@ -641,3 +641,107 @@ function Get-VstsBuildQueue
 
     return $Result.Value
 }
+
+<#
+    .SYNOPSIS
+    Get a list of all tags across all builds or gets
+    a list of tags for a specific build.
+
+    .DESCRIPTION
+    This cmdlet will return a list of tags used across
+    all builds or will return a list of tags used in
+    a specific build if the BuildId is passed.
+
+    .PARAMETER AccountName
+    The name of the VSTS account to use.
+
+    .PARAMETER User
+    This user name to authenticate to VSTS.
+
+    .PARAMETER Token
+    This personal access token to use to authenticate to VSTS.
+
+    .PARAMETER Session
+    The session object created by New-VstsSession.
+
+    .PARAMETER Project
+    The name of the project to create the new release in.
+
+    .PARAMETER BuildId
+    The id of the Build to return tags for.
+
+    .EXAMPLE
+    >
+    $vstsSession = New-VSTSSession `
+        -AccountName 'myvstsaccount' `
+        -User 'joe.bloggs@fabrikam.com' `
+        -Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
+    Get-VstsBuildTag `
+        -Session $vstsSession `
+        -Project 'FabrikamFiber'
+
+    Return all build tags in the project FabrikamFiber.
+
+    .EXAMPLE
+    >
+    $vstsSession = New-VSTSSession `
+        -AccountName 'myvstsaccount' `
+        -User 'joe.bloggs@fabrikam.com' `
+        -Token 'hi3pxk5usaag6jslczs5bqmlkngvhr3czqyh65jdvlvtt3qkh4ya'
+
+    Get-VstsBuildTag `
+        -Session $vstsSession `
+        -Project 'FabrikamFiber' `
+        -BuildId 103
+
+    Return all build tags for the build 103 in project FabrikamFiber.
+#>
+function Get-VstsBuildTag
+{
+    [CmdletBinding(DefaultParameterSetName = 'Account')]
+    param
+    (
+        [Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+        [String] $AccountName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+        [String] $User,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+        [String] $Token,
+
+        [Parameter(Mandatory = $True, ParameterSetName = 'Session')]
+        $Session,
+
+        [Parameter(Mandatory = $True)]
+        [String] $Project,
+
+        [Parameter()]
+        [Int32] $BuildId
+    )
+
+    if ($PSCmdlet.ParameterSetName -eq 'Account')
+    {
+        $Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+    }
+
+    if ($PSBoundParameters.ContainsKey('BuildId'))
+    {
+        $path = 'build/builds/{0}/tags' -f $BuildId
+        $additionalInvokeParameters = @{}
+    }
+    else
+    {
+        $path = 'build/tags'
+    }
+
+    $result = Invoke-VstsEndpoint `
+        -Session $Session `
+        -Path $path `
+        -Project $Project `
+        -ApiVersion '2.0' `
+        @additionalInvokeParameters
+
+    return $result.Value
+}
