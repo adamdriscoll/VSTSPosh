@@ -24,6 +24,7 @@
   - Added function to return the VSTS endpoint URI builder object.
 - Get-VstsQueryStringParametersFromBound Cmdlet:
   - Added function to support additional parameters and queries.
+  - Added unit tests.
 - New-VstsSession Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
