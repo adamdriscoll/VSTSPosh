@@ -131,6 +131,11 @@
   - Unit tests completed.
 - Get-VstsBuildTag Cmdlet:
   - Added cmdlet to get build tags from a build or entire project.
+- Get-VstsBuildDefinition Cmdlet:
+  - Added documentation.
+  - Style consistency cleanup.
+  - Added CmdletBinding and other PowerShell best practice changes.
+  - Unit tests completed.
 
 ## 1.0.0.0
 
