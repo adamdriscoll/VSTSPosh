@@ -148,5 +148,59 @@ Describe 'VSTS' -Tags 'Unit' {
                 }
             }
         }
+
+        Context 'Test Get-VstsQueryStringParametersFromBound' {
+            $testBoundParameters = @{
+                ParameterOne = 'ParameterOneValue'
+                ParameterTwo = 'ParameterTwoValue'
+            }
+
+            Context 'BoundParameters and ParameterList with no matching parameters passed' {
+                $getVstsQueryStringParametersFromBoundParameters = @{
+                    BoundParameters = $testBoundParameters
+                    ParameterList   = @('ParameterThree')
+                }
+
+                It 'Should not throw an exception' {
+                    { $script:getVstsQueryStringParametersFromBoundResult = Get-VstsQueryStringParametersFromBound @getVstsQueryStringParametersFromBoundParameters } | Should Not Throw
+                }
+
+                It 'Should return expected object' {
+                    $script:getVstsQueryStringParametersFromBoundResult | Should BeNullOrEmpty
+                }
+            }
+
+            Context 'BoundParameters and ParameterList with only ParameterOne passed' {
+                $getVstsQueryStringParametersFromBoundParameters = @{
+                    BoundParameters = $testBoundParameters
+                    ParameterList   = @('ParameterOne')
+                }
+
+                It 'Should not throw an exception' {
+                    { $script:getVstsQueryStringParametersFromBoundResult = Get-VstsQueryStringParametersFromBound @getVstsQueryStringParametersFromBoundParameters } | Should Not Throw
+                }
+
+                It 'Should return ParameterOne but not ParameterTwo' {
+                    $script:getVstsQueryStringParametersFromBoundResult.ContainsKey('ParameterOne') | Should Be $true
+                    $script:getVstsQueryStringParametersFromBoundResult.ContainsKey('ParameterTwo') | Should Be $false
+                }
+            }
+
+            Context 'BoundParameters and ParameterList with both ParameterOne and ParameterTwo passed' {
+                $getVstsQueryStringParametersFromBoundParameters = @{
+                    BoundParameters = $testBoundParameters
+                    ParameterList   = @('ParameterOne','ParameterTwo')
+                }
+
+                It 'Should not throw an exception' {
+                    { $script:getVstsQueryStringParametersFromBoundResult = Get-VstsQueryStringParametersFromBound @getVstsQueryStringParametersFromBoundParameters } | Should Not Throw
+                }
+
+                It 'Should return ParameterOne but not ParameterTwo' {
+                    $script:getVstsQueryStringParametersFromBoundResult.ContainsKey('ParameterOne') | Should Be $true
+                    $script:getVstsQueryStringParametersFromBoundResult.ContainsKey('ParameterTwo') | Should Be $true
+                }
+            }
+        }
     }
 }
