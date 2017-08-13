@@ -13,6 +13,8 @@ Import-Module -Name $modulePath -Force
 
 Describe 'Code' -Tags 'Unit' {
     InModuleScope -ModuleName VSTS {
+        # All unit tests run in VSTS module scope
+
         # Prep mock objects and parameters
         $testAccountName = 'testAccount'
         $testUser = 'testUser'
@@ -50,7 +52,6 @@ Describe 'Code' -Tags 'Unit' {
             Value = $mockReturnOKString
         }
 
-        # All unit tests run in VSTS module scope
         Context 'Test Get-VstsGitRepository' {
             Context 'Both Project and Repository passed' {
                 BeforeEach {
