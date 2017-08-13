@@ -223,7 +223,7 @@ Describe 'VSTS' -Tags 'Unit' {
                         { $script:getVstsEndpointUriResult = Get-VstsEndpointUri @getVstsEndpointUriParameters } | Should Not Throw
                     }
 
-                    It 'Should return expected object' {
+                    It 'Should return expected URI' {
                         $script:getVstsEndpointUriResult | Should Be ('HTTP://{0}.visualstudio.com:80/' -f $testAccountName)
                     }
                 }
@@ -246,7 +246,7 @@ Describe 'VSTS' -Tags 'Unit' {
                         { $script:getVstsEndpointUriResult = Get-VstsEndpointUri @getVstsEndpointUriParameters } | Should Not Throw
                     }
 
-                    It 'Should return expected object' {
+                    It 'Should return expected URI' {
                         $script:getVstsEndpointUriResult | Should Be ('HTTPS://{0}.visualstudio.com:443/' -f $testAccountName)
                     }
                 }
@@ -270,7 +270,7 @@ Describe 'VSTS' -Tags 'Unit' {
                         { $script:getVstsEndpointUriResult = Get-VstsEndpointUri @getVstsEndpointUriParameters } | Should Not Throw
                     }
 
-                    It 'Should return expected object' {
+                    It 'Should return expected URI' {
                         $script:getVstsEndpointUriResult | Should Be ('HTTPS://{0}.testendpoint.visualstudio.com:443/' -f $testAccountName)
                     }
                 }
@@ -279,11 +279,11 @@ Describe 'VSTS' -Tags 'Unit' {
             Context 'TFS Session object' {
                 Context 'Using HTTP and endpoint not specified' {
                     $testSessionParameters = [pscustomobject] @{
-                        User        = $testUser
-                        Token       = $testToken
-                        Server      = 'tfsserver'
-                        Collection  = $testCollection
-                        Scheme      = 'HTTP'
+                        User       = $testUser
+                        Token      = $testToken
+                        Server     = 'tfsserver'
+                        Collection = $testCollection
+                        Scheme     = 'HTTP'
                     }
 
                     $getVstsEndpointUriParameters = @{
@@ -294,18 +294,18 @@ Describe 'VSTS' -Tags 'Unit' {
                         { $script:getVstsEndpointUriResult = Get-VstsEndpointUri @getVstsEndpointUriParameters } | Should Not Throw
                     }
 
-                    It 'Should return expected object' {
+                    It 'Should return expected URI' {
                         $script:getVstsEndpointUriResult | Should Be 'HTTP://tfsserver:80/'
                     }
                 }
 
                 Context 'Using HTTPS and endpoint not specified' {
                     $testSessionParameters = [pscustomobject] @{
-                        User        = $testUser
-                        Token       = $testToken
-                        Server      = 'tfsserver'
-                        Collection  = $testCollection
-                        Scheme      = 'HTTPS'
+                        User       = $testUser
+                        Token      = $testToken
+                        Server     = 'tfsserver'
+                        Collection = $testCollection
+                        Scheme     = 'HTTPS'
                     }
 
                     $getVstsEndpointUriParameters = @{
@@ -316,8 +316,55 @@ Describe 'VSTS' -Tags 'Unit' {
                         { $script:getVstsEndpointUriResult = Get-VstsEndpointUri @getVstsEndpointUriParameters } | Should Not Throw
                     }
 
-                    It 'Should return expected object' {
+                    It 'Should return expected URI' {
                         $script:getVstsEndpointUriResult | Should Be 'HTTPS://tfsserver:443/'
+                    }
+                }
+            }
+
+            Context 'Test Get-VstsAuthorization' {
+                Context 'User and Token passed' {
+                    $getVstsAuthorizationParameters = @{
+                        User  = $testUser
+                        Token = $testToken
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:getVstsAuthorizationResult = Get-VstsAuthorization @getVstsAuthorizationParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected authorization header' {
+                        $script:getVstsAuthorizationResult | Should Be 'Basic dGVzdFVzZXI6dGVzdFRva2Vu'
+                    }
+                }
+            }
+
+            Context 'Test Test-Guid' {
+                Context 'Invalid Guid passed' {
+                    $testGuidParameters = @{
+                        Guid = 'Not a valid guid'
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:testGuidResult = Test-Guid @testGuidParameters } | Should Not Throw
+                    }
+
+                    It 'Should return false' {
+                        $script:testGuidResult | Should Be $false
+                    }
+                }
+
+                Context 'Valid Guid passed' {
+                    $testGuidParameters = @{
+                        Guid = [Guid]::NewGuid().Guid
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:testGuidResult = Test-Guid @testGuidParameters } | Should Not Throw
+                    }
+
+                    It 'Should return true' {
+                        $script:testGuidResult | Should Be $true
                     }
                 }
             }

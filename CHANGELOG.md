@@ -42,6 +42,7 @@
 - Get-VstsAuthorization Cmdlet:
   - Added documentation.
   - Added CmdletBinding and other PowerShell best practice changes.
+  - Added unit tests.
 - Get-VstsProject Cmdlet:
   - Added documentation.
   - Style consistency cleanup.
@@ -111,6 +112,9 @@
   - Added documentation.
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
+  - Added unit tests.
+  - Changed Input parameter name to Guid because Input is a reserved
+    word.
 - Get-VstsGitRepository Cmdlet:
   - Added documentation.
   - Style consistency cleanup.

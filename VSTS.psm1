@@ -364,8 +364,10 @@ function Get-VstsAuthorization
     [OutputType([String])]
     param
     (
+        [Parameter(Mandatory = $True)]
         [String] $User,
 
+        [Parameter(Mandatory = $True)]
         [String] $Token
     )
 
@@ -377,7 +379,7 @@ function Get-VstsAuthorization
     .SYNOPSIS
     Checks that a Guid is valid.
 
-    .PARAMETER Input
+    .PARAMETER Guid
     The Guid to validate.
 
     .OUTPUTS
@@ -390,9 +392,9 @@ function Test-Guid
     param
     (
         [Parameter(Mandatory = $True)]
-        $Input
+        [String] $Guid
     )
 
-    $Guid = [Guid]::Empty
-    [Guid]::TryParse($Input, [ref]$Guid)
+    $newGuid = [Guid]::Empty
+    [Guid]::TryParse($Guid, [ref]$newGuid)
 }
