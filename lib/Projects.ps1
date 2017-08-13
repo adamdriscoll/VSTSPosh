@@ -163,40 +163,81 @@ function Wait-VSTSProject
         $Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
     }
 
-    if ($Exists)
-    {
-        $existsMessage = 'exists'
-    }
-    else
-    {
-        $existsMessage = 'does not exist'
-    }
-
+    $isMatched = $false
     $retries = 0
     do
     {
-        # Takes a few seconds for the project to be created
-        Start-Sleep -Seconds $RetryIntervalSec
 
-        Write-Verbose -Message ('Checking project {0} {1}' -f $Name, $existsMessage)
+        Write-Verbose -Message ('Querying project {0}' -f $Name)
         $project = Get-VSTSProject `
             -Session $Session `
             -Name $Name `
             -ErrorAction SilentlyContinue
 
-        # If waiting for project to exist and state specified then wait for it to match state
-        if ($Exists -and $PSBoundParameters.ContainsKey('State') -and $project.State -ne $State)
+        if ($Exists)
         {
-            Write-Verbose -Message ('Project exists but state is {0} and not {1}' -f $project.State, $State)
-            $project = $null
+            # Waiting for project to exist
+            if ($project)
+            {
+                # Project exists
+                if ($PSBoundParameters.ContainsKey('State'))
+                {
+                    # The correct state also needs to be determined
+                    if ($project.State -eq $State)
+                    {
+                        $resultMessage = ('Project {0} exists in required state {1}' -f $Name, $project.State)
+                        $isMatched = $true
+                    }
+                    else
+                    {
+                        $resultMessage = ('Project {0} exists in state {1}, but not in required state {2}' -f $Name, $project.State, $State)
+                    }
+                }
+                else
+                {
+                    $resultMessage = ('Project {0} exists and should' -f $Name)
+                    $isMatched = $true
+                }
+            }
+            else
+            {
+                $resultMessage = ('Project {0} does not exist but should' -f $Name)
+            }
+        }
+        else
+        {
+            # Waiting for project to not exist
+            if ($project)
+            {
+                $resultMessage = ('Project {0} exists but should not' -f $Name)
+            }
+            else
+            {
+                $resultMessage = ('Project {0} does not exist and should not' -f $Name)
+                $isMatched = $true
+            }
+        }
+
+        Write-Verbose -Message $resultMessage
+
+        if ($isMatched)
+        {
+            break
         }
 
         $retries++
-    } while ((($null -eq $project -and $Exists) -or ($null -ne $project -and -not $Exists)) -and $retries -le $Attempts)
 
-    if (($null -eq $project -and $Exists) -or ($null -ne $project -and -not $Exists) )
+        # Don't wait on the last retry
+        if ($retries -lt $Attempts)
+        {
+            Start-Sleep -Seconds $RetryIntervalSec
+        }
+    } while ($retries -le $Attempts)
+
+    if (-not $isMatched)
     {
-        throw ('Project {0} {1}' -f $Name, $existsMessage)
+        # If we never reached the correct state then throw exception
+        throw ('{0} after {1} attempts' -f $resultMessage,$Attempts)
     }
 }
 
