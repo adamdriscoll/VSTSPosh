@@ -136,6 +136,11 @@
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
   - Unit tests completed.
+- New-VstsBuildDefinition Cmdlet:
+  - Added documentation.
+  - Style consistency cleanup.
+  - Added CmdletBinding and other PowerShell best practice changes.
+  - Unit tests completed.
 
 ## 1.0.0.0
 
