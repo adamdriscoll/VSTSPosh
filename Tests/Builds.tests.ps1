@@ -47,6 +47,13 @@ Describe 'Builds' -Tags 'Unit' {
         $testProject = 'testProject'
         $testDefinitionId = 1
         $testDefinitionName = 'testDefinition'
+        $testQueue = 'testQueue'
+        $testQueueId = 2
+        $testRepository = [psobject] @{
+            Id   = 3
+            Name = 'testRepository'
+            Url  = 'http://repourl'
+        }
 
         $mockReturnOKString = 'Result OK'
         $mockReturnOKObject = [psobject] @{
@@ -124,7 +131,7 @@ Describe 'Builds' -Tags 'Unit' {
                 Context 'Session Object passed' {
                     $getVstsBuildDefinitionParameters = $testSessionParameters.Clone()
                     $getVstsBuildDefinitionParameters += @{
-                        Id = $testDefinitionId
+                        Id      = $testDefinitionId
                         Project = $testProject
                     }
 
@@ -144,7 +151,7 @@ Describe 'Builds' -Tags 'Unit' {
                 Context 'Account Details passed' {
                     $getVstsBuildDefinitionParameters = $testAccountParameters.Clone()
                     $getVstsBuildDefinitionParameters += @{
-                        Id = $testDefinitionId
+                        Id      = $testDefinitionId
                         Project = $testProject
                     }
 
@@ -181,8 +188,8 @@ Describe 'Builds' -Tags 'Unit' {
                 Context 'Session Object passed' {
                     $getVstsBuildDefinitionParameters = $testSessionParameters.Clone()
                     $getVstsBuildDefinitionParameters += @{
-                        Name = $testDefinitionName
-                        Top = 1
+                        Name    = $testDefinitionName
+                        Top     = 1
                         Project = $testProject
                     }
 
@@ -202,13 +209,149 @@ Describe 'Builds' -Tags 'Unit' {
                 Context 'Account Details passed' {
                     $getVstsBuildDefinitionParameters = $testAccountParameters.Clone()
                     $getVstsBuildDefinitionParameters += @{
-                        Name = $testDefinitionName
-                        Top = 1
+                        Name    = $testDefinitionName
+                        Top     = 1
                         Project = $testProject
                     }
 
                     It 'Should not throw an exception' {
                         { $script:getVstsBuildDefinitionResult = Get-VstsBuildDefinition @getVstsBuildDefinitionParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected object' {
+                        $script:getVstsBuildDefinitionResult | Should Be $mockReturnOKString
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+            }
+        }
+
+        Context 'Test New-VstsBuildDefinition' {
+            Context 'Project, Name, Queue Name and Repository Object passed' {
+                BeforeEach {
+                    Mock `
+                        -CommandName Invoke-VstsEndpoint `
+                        -ParameterFilter {
+                            $Session.AccountName -eq $testSessionObject.AccountName -and `
+                            $Session.User -eq $testSessionObject.User -and `
+                            $Session.Token -eq $testSessionObject.Token -and `
+                            $Project -eq $testProject -and `
+                            $Path -eq 'build/definitions' -and `
+                            $Method -eq 'POST' -and `
+                            $ApiVersion -eq '2.0'
+                        } `
+                        -MockWith { $mockReturnOKObject }
+
+                    Mock `
+                        -CommandName Get-VstsBuildQueue `
+                        -ParameterFilter {
+                            $Session.AccountName -eq $testSessionObject.AccountName -and `
+                            $Session.User -eq $testSessionObject.User -and `
+                            $Session.Token -eq $testSessionObject.Token -and `
+                            $Name -eq $testQueue
+                        } `
+                        -MockWith { $testQueueId }
+                }
+
+                Context 'Session Object passed' {
+                    $newVstsBuildDefinitionParameters = $testSessionParameters.Clone()
+                    $newVstsBuildDefinitionParameters += @{
+                        Project    = $testProject
+                        Name       = $testDefinitionName
+                        Queue      = $testQueue
+                        Repository = $testRepository
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:newVstsBuildDefinitionResult = New-VstsBuildDefinition @newVstsBuildDefinitionParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected object' {
+                        $script:newVstsBuildDefinitionResult | Should Be $mockReturnOKString
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                        Assert-MockCalled -CommandName Get-VstsBuildQueue -Exactly -Times 1
+                    }
+                }
+
+                Context 'Account Details passed' {
+                    $newVstsBuildDefinitionParameters = $testAccountParameters.Clone()
+                    $newVstsBuildDefinitionParameters += @{
+                        Project = $testProject
+                        Name       = $testDefinitionName
+                        Queue      = $testQueue
+                        Repository = $testRepository
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:newVstsBuildDefinitionResult = New-VstsBuildDefinition @newVstsBuildDefinitionParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected object' {
+                        $script:getVstsBuildDefinitionResult | Should Be $mockReturnOKString
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                        Assert-MockCalled -CommandName Get-VstsBuildQueue -Exactly -Times 1
+                    }
+                }
+            }
+
+            Context 'Project, Name, Queue Id and Repository Object passed' {
+                BeforeEach {
+                    Mock `
+                        -CommandName Invoke-VstsEndpoint `
+                        -ParameterFilter {
+                            $Session.AccountName -eq $testSessionObject.AccountName -and `
+                            $Session.User -eq $testSessionObject.User -and `
+                            $Session.Token -eq $testSessionObject.Token -and `
+                            $Project -eq $testProject -and `
+                            $Path -eq 'build/definitions' -and `
+                            $Method -eq 'POST' -and `
+                            $ApiVersion -eq '2.0'
+                        } `
+                        -MockWith { $mockReturnOKObject }
+                }
+
+                Context 'Session Object passed' {
+                    $newVstsBuildDefinitionParameters = $testSessionParameters.Clone()
+                    $newVstsBuildDefinitionParameters += @{
+                        Project    = $testProject
+                        Name       = $testDefinitionName
+                        Queue      = $testQueueId
+                        Repository = $testRepository
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:newVstsBuildDefinitionResult = New-VstsBuildDefinition @newVstsBuildDefinitionParameters } | Should Not Throw
+                    }
+
+                    It 'Should return expected object' {
+                        $script:newVstsBuildDefinitionResult | Should Be $mockReturnOKString
+                    }
+
+                    It 'Should call expected mocks' {
+                        Assert-MockCalled -CommandName Invoke-VstsEndpoint -Exactly -Times 1
+                    }
+                }
+
+                Context 'Account Details passed' {
+                    $newVstsBuildDefinitionParameters = $testAccountParameters.Clone()
+                    $newVstsBuildDefinitionParameters += @{
+                        Project = $testProject
+                        Name       = $testDefinitionName
+                        Queue      = $testQueueId
+                        Repository = $testRepository
+                    }
+
+                    It 'Should not throw an exception' {
+                        { $script:newVstsBuildDefinitionResult = New-VstsBuildDefinition @newVstsBuildDefinitionParameters } | Should Not Throw
                     }
 
                     It 'Should return expected object' {

@@ -337,12 +337,11 @@ function New-VstsBuildDefinition
         "comment"    = $Comment
     } | ConvertTo-Json -Depth 20
 
-    Write-Verbose -Verbose -Message ($body | OUt-String)
     $result = Invoke-VstsEndpoint `
         -Session $Session `
         -Project $Project `
         -Path $path `
-        -ApiVersion 2.0 `
+        -ApiVersion '2.0' `
         -Method 'POST' `
         -Body $body
 
