@@ -29,20 +29,29 @@ Describe 'Projects' -Tags 'Integration' {
                 $parameterDetails = @{
                     Session = $Script:Session
                     Name    = $projectName
-                    Verbose = $True
                 }
 
                 It "Should create a new project '$projectName'" {
-                    { New-VSTSProject @parameterDetails -Wait } | Should Not Throw
+                    { New-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                }
+
+                It "Should wait for new project '$projectName' to be WellFormed" {
+                    {
+                        Wait-VSTSProject @parameterDetails `
+                            -Exists `
+                            -State 'WellFormed' `
+                            -Attempts 50 `
+                            -RetryIntervalSec 5
+                    } | Should Not Throw
                 }
 
                 It "Should return the new project '$projectName'" {
-                    { $script:Result = Get-VSTSProject @parameterDetails } | Should Not Throw
+                    { $script:Result = Get-VSTSProject @parameterDetails -Verbose } | Should Not Throw
                     $script:Result.Name | Should BeExactly $projectName
                 }
 
                 It "Should delete the new project '$projectName'" {
-                    { Remove-VSTSProject @parameterDetails } | Should Not Throw
+                    { Remove-VSTSProject @parameterDetails -Verbose } | Should Not Throw
                 }
             }
 
@@ -52,20 +61,29 @@ Describe 'Projects' -Tags 'Integration' {
                 $parameterDetails = @{
                     Session = $Script:Session
                     Name    = $projectName
-                    Verbose = $True
                 }
 
                 It "Should create a new project '$projectName'" {
-                    { New-VSTSProject @parameterDetails -TemplateTypeName 'Scrum' -Wait } | Should Not Throw
+                    { New-VSTSProject @parameterDetails -TemplateTypeName 'Scrum' -Verbose } | Should Not Throw
+                }
+
+                It "Should wait for new project '$projectName' to be WellFormed" {
+                    {
+                        Wait-VSTSProject @parameterDetails `
+                            -Exists `
+                            -State 'WellFormed' `
+                            -Attempts 50 `
+                            -RetryIntervalSec 5
+                    } | Should Not Throw
                 }
 
                 It "Should return the new project '$projectName'" {
-                    { $script:Result = Get-VSTSProject @parameterDetails } | Should Not Throw
+                    { $script:Result = Get-VSTSProject @parameterDetails -Verbose } | Should Not Throw
                     $script:Result.Name | Should BeExactly $projectName
                 }
 
                 It "Should delete the new project '$projectName'" {
-                    { Remove-VSTSProject @parameterDetails } | Should Not Throw
+                    { Remove-VSTSProject @parameterDetails -Verbose } | Should Not Throw
                 }
             }
         }
@@ -79,20 +97,29 @@ Describe 'Projects' -Tags 'Integration' {
                     User        = $userName
                     Token       = $Token
                     Name        = $projectName
-                    Verbose     = $True
                 }
 
                 It "Should create a new project '$projectName'" {
-                    { New-VSTSProject @parameterDetails -Wait } | Should Not Throw
+                    { New-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                }
+
+                It "Should wait for new project '$projectName' to be WellFormed" {
+                    {
+                        Wait-VSTSProject @parameterDetails `
+                            -Exists `
+                            -State 'WellFormed' `
+                            -Attempts 50 `
+                            -RetryIntervalSec 5
+                    } | Should Not Throw
                 }
 
                 It "Should return the new project '$projectName'" {
-                    { $script:Result = Get-VSTSProject @parameterDetails } | Should Not Throw
+                    { $script:Result = Get-VSTSProject @parameterDetails -Verbose } | Should Not Throw
                     $script:Result.Name | Should BeExactly $projectName
                 }
 
                 It "Should delete the new project '$projectName'" {
-                    { Remove-VSTSProject @parameterDetails } | Should Not Throw
+                    { Remove-VSTSProject @parameterDetails -Verbose } | Should Not Throw
                 }
             }
 
@@ -104,20 +131,29 @@ Describe 'Projects' -Tags 'Integration' {
                     User        = $userName
                     Token       = $Token
                     Name        = $projectName
-                    Verbose     = $True
                 }
 
                 It "Should create a new project '$projectName'" {
-                    { New-VSTSProject @parameterDetails -TemplateTypeName 'Scrum' -Wait } | Should Not Throw
+                    { New-VSTSProject @parameterDetails -TemplateTypeName 'Scrum' -Verbose } | Should Not Throw
+                }
+
+                It "Should wait for new project '$projectName' to be WellFormed" {
+                    {
+                        Wait-VSTSProject @parameterDetails `
+                            -Exists `
+                            -State 'WellFormed' `
+                            -Attempts 50 `
+                            -RetryIntervalSec 5
+                    } | Should Not Throw
                 }
 
                 It "Should return the new project '$projectName'" {
-                    { $script:Result = Get-VSTSProject @parameterDetails } | Should Not Throw
+                    { $script:Result = Get-VSTSProject @parameterDetails -Verbose } | Should Not Throw
                     $script:Result.Name | Should BeExactly $projectName
                 }
 
                 It "Should delete the new project '$projectName'" {
-                    { Remove-VSTSProject @parameterDetails } | Should Not Throw
+                    { Remove-VSTSProject @parameterDetails -Verbose } | Should Not Throw
                 }
             }
 
