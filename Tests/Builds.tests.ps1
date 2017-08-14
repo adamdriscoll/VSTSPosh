@@ -229,7 +229,8 @@ Describe 'Builds' -Tags 'Integration' {
         $projectName = New-ProjectName
         $session = New-VSTSSession -AccountName $account -User $userName -Token $token
         Write-Verbose -Verbose -Message ('Creating VSTS test project {0}' -f $projectName)
-        New-VSTSProject -Session $session -Name $projectName -Wait
+        New-VSTSProject -Session $session -Name $projectName
+        Wait-VSTSProject -Session $session -Name $projectName -Exists -State 'WellFormed' -Attempts 50 -RetryIntervalSec 5
     }
 
     Context 'Has default build queues' {
