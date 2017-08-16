@@ -28,8 +28,8 @@ environment:
   ApiKey:
     secure: jv+jb1IJtjQxAxQigSve12KwVeuu7evZk7Ot5PKapLebDyl2LHsQGcqZFQ8VeDxV
   VSTSPoshToken:
-    secure: ECrf9NYzb3e5BBJHOt4+oXRmQkND5iINYe12pCHk+J5YihNsD769qFJhCdDvFfCEEQp9u4Au9Ak7tMgDi7IA0g==
+    secure: FynjMo+abZRZQv1RB0UnKzORp7YFmF9+ey17ezNxQ1abYcPzVhU+q4p/bbWA2xmwfyxVFg0xMGDssU6DhW4IJA==
   VSTSPoshUserName:
-    secure: vZz6E/1zBRV9PylZzsb6UA==
+    secure: edlf8+6ClMjqoBuBweBkxQ==
   VSTSPoshAccount:
-    secure: eYZAmOP9Jo3n8J2OLsWRKA==
+    secure: edlf8+6ClMjqoBuBweBkxQ==
