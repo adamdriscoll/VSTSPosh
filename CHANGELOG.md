@@ -7,6 +7,8 @@
 - Readme.md:
   - Fixed Markdown rule violations.
   - Added missing cmdlets.
+  - Updated branch badges for CodeCov.io to point to mainline
+    fork.
 - Unit Tests:
   - Fixed PS Script Analyzer and added support for reporting on
     warning-level rules. Copied from Microsoft DSC Resource Kit
