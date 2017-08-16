@@ -1,27 +1,52 @@
 ﻿$userName = $env:VSTSPoshUserName
 $token = $env:VSTSPoshToken
-$account = $env:VSTSPoshAccount 
+$account = $env:VSTSPoshAccount
 
-function New-ProjectName {
-	[Guid]::NewGuid().ToString().Replace('-','').Substring(10)
+function New-ProjectName
+{
+    [Guid]::NewGuid().ToString().Replace('-', '').Substring(10)
 }
 
-Import-Module (Join-Path $PSScriptRoot '..\VSTS.psm1') -Force
+$moduleRoot = Split-Path -Path $PSScriptRoot -Parent
+$modulePath = Join-Path -Path $moduleRoot -ChildPath 'VSTS.psm1'
+Import-Module -Name $modulePath -Force
 
-Describe "Work items" -Tags "Integration" {
-	$ProjectName = New-ProjectName
-	$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
-	New-VSTSProject -Session $Session -Name $ProjectName -Wait
+Describe 'Code' -Tags 'Unit' {
+    InModuleScope -ModuleName VSTS {
+        # All unit tests run in VSTS module scope
 
-	Context "Work item doesn't exist" {
-		It "Creates new work item" {
-			
-			$WI = New-VstsWorkItem -Session $Session -WorkItemType 'Task' -Project $ProjectName -PropertyHashtable @{ 'System.Title' = 'This is a test work item'; 'System.Description' = 'Test'}
-			$WI | Should not be $null
-		}
-	}
+    }
+}
 
-	Remove-VSTSProject -Session $Session -Name $ProjectName
+Describe 'Work items' -Tags 'Integration' {
+    BeforeAll {
+        $projectName = New-ProjectName
+        $session = New-VSTSSession -AccountName $account -User $userName -Token $token
+        Write-Verbose -Verbose -Message ('Creating VSTS test project {0}' -f $projectName)
+        New-VSTSProject -Session $session -Name $projectName
+        Wait-VSTSProject -Session $session -Name $projectName -Exists -State 'WellFormed' -Attempts 50 -RetryIntervalSec 5
+    }
+
+    Context "Work item doesn't exist" {
+        It 'Should create a new work item' {
+            { $script:workItem = New-VstsWorkItem `
+                    -Session $session `
+                    -WorkItemType 'Task' `
+                    -Project $projectName `
+                    -PropertyHashtable @{
+                    'System.Title'       = 'This is a test work item'
+                    'System.Description' = 'Test'
+                } `
+                    -Verbose } | Should Not Throw
+            $script:workItem.Fields.'System.Title' | Should Be 'This is a test work item'
+            $script:workItem.Fields.'System.Description' | Should Be 'Test'
+        }
+    }
+
+    AfterAll {
+        Write-Verbose -Verbose -Message ('Deleting VSTS test project {0}' -f $projectName)
+        Remove-VSTSProject -Session $session -Name $projectName
+    }
 }
 
 

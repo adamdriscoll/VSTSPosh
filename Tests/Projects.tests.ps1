@@ -1,49 +1,195 @@
 ﻿$userName = $env:VSTSPoshUserName
 $token = $env:VSTSPoshToken
-$account = $env:VSTSPoshAccount 
+$account = $env:VSTSPoshAccount
 
-function New-ProjectName {
-	[Guid]::NewGuid().ToString().Replace('-','').Substring(10)
+function New-ProjectName
+{
+    [Guid]::NewGuid().ToString().Replace('-', '').Substring(10)
 }
 
-Import-Module (Join-Path $PSScriptRoot '..\VSTS.psm1') -Force
+$moduleRoot = Split-Path -Path $PSScriptRoot -Parent
+$modulePath = Join-Path -Path $moduleRoot -ChildPath 'VSTS.psm1'
+Import-Module -Name $modulePath -Force
 
-Describe "Projects" -Tags Integration {
-	Context "Project doesn't exist" {
-		It "Creates new project" {
-			$ProjectName = New-ProjectName
-			New-VSTSProject -AccountName $Account -User $userName -Token $token -Name $ProjectName -Wait
-			Remove-VSTSProject -AccountName $Account -User $userName -Token $token -Name $ProjectName
-		}
+Describe 'Code' -Tags 'Unit' {
+    InModuleScope -ModuleName VSTS {
+        # All unit tests run in VSTS module scope
 
-		It "Creates new project with session" {
-			$ProjectName = New-ProjectName
-			$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
-			New-VSTSProject -Session $Session -Name $ProjectName -Wait
-			Remove-VSTSProject -Session $Session -Name $ProjectName
-		}
+    }
+}
 
-		It "Create new project with specified template name" {
-			$ProjectName = New-ProjectName
-			$Session = New-VSTSSession -AccountName $Account -User $userName -Token $token
-			New-VSTSProject -Session $Session -Name $ProjectName -Wait -TemplateTypeName 'Scrum'
-			Get-VSTSProject -Session $Session -Name $ProjectName | Should not be $null
-			Remove-VSTSProject -Session $Session -Name $ProjectName
-		}
-	}
+Describe 'Projects' -Tags 'Integration' {
+    $Script:Session = New-VSTSSession -AccountName $account -User $userName -Token $token
 
-	Context "Process" {
-		It "Returns default process template" {
-			$Session = New-VstsSession -AccountName $account -User $userName -Token $token
+    Context "Project doesn't exist" {
+        Context 'Using session object' {
+            Context 'Using no parameters' {
+                $projectName = New-ProjectName
 
-			$Process = Get-VstsProcess -Session $Session | Where Name -EQ 'Agile'
-			$Process | Should not be $null
-			
-			$Process = Get-VstsProcess -Session $Session | Where Name -EQ 'CMMI'
-			$Process | Should not be $null
+                $parameterDetails = @{
+                    Session = $Script:Session
+                    Name    = $projectName
+                }
 
-			$Process = Get-VstsProcess -Session $Session | Where Name -EQ 'SCRUM'
-			$Process | Should not be $null
-		}
-	}
+                It "Should create a new project '$projectName'" {
+                    { New-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                }
+
+                It "Should wait for new project '$projectName' to be WellFormed" {
+                    {
+                        Wait-VSTSProject @parameterDetails `
+                            -Exists `
+                            -State 'WellFormed' `
+                            -Attempts 50 `
+                            -RetryIntervalSec 5
+                    } | Should Not Throw
+                }
+
+                It "Should return the new project '$projectName'" {
+                    { $script:Result = Get-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                    $script:Result.Name | Should BeExactly $projectName
+                }
+
+                It "Should delete the new project '$projectName'" {
+                    { Remove-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                }
+            }
+
+            Context "Using template name 'Scrum'" {
+                $projectName = New-ProjectName
+
+                $parameterDetails = @{
+                    Session = $Script:Session
+                    Name    = $projectName
+                }
+
+                It "Should create a new project '$projectName'" {
+                    { New-VSTSProject @parameterDetails -TemplateTypeName 'Scrum' -Verbose } | Should Not Throw
+                }
+
+                It "Should wait for new project '$projectName' to be WellFormed" {
+                    {
+                        Wait-VSTSProject @parameterDetails `
+                            -Exists `
+                            -State 'WellFormed' `
+                            -Attempts 50 `
+                            -RetryIntervalSec 5
+                    } | Should Not Throw
+                }
+
+                It "Should return the new project '$projectName'" {
+                    { $script:Result = Get-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                    $script:Result.Name | Should BeExactly $projectName
+                }
+
+                It "Should delete the new project '$projectName'" {
+                    { Remove-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                }
+            }
+        }
+
+        Context 'Using account details' {
+            Context 'Using no parameters' {
+                $projectName = New-ProjectName
+
+                $parameterDetails = @{
+                    AccountName = $account
+                    User        = $userName
+                    Token       = $Token
+                    Name        = $projectName
+                }
+
+                It "Should create a new project '$projectName'" {
+                    { New-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                }
+
+                It "Should wait for new project '$projectName' to be WellFormed" {
+                    {
+                        Wait-VSTSProject @parameterDetails `
+                            -Exists `
+                            -State 'WellFormed' `
+                            -Attempts 50 `
+                            -RetryIntervalSec 5
+                    } | Should Not Throw
+                }
+
+                It "Should return the new project '$projectName'" {
+                    { $script:Result = Get-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                    $script:Result.Name | Should BeExactly $projectName
+                }
+
+                It "Should delete the new project '$projectName'" {
+                    { Remove-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                }
+            }
+
+            Context "Using template name 'Scrum'" {
+                $projectName = New-ProjectName
+
+                $parameterDetails = @{
+                    AccountName = $account
+                    User        = $userName
+                    Token       = $Token
+                    Name        = $projectName
+                }
+
+                It "Should create a new project '$projectName'" {
+                    { New-VSTSProject @parameterDetails -TemplateTypeName 'Scrum' -Verbose } | Should Not Throw
+                }
+
+                It "Should wait for new project '$projectName' to be WellFormed" {
+                    {
+                        Wait-VSTSProject @parameterDetails `
+                            -Exists `
+                            -State 'WellFormed' `
+                            -Attempts 50 `
+                            -RetryIntervalSec 5
+                    } | Should Not Throw
+                }
+
+                It "Should return the new project '$projectName'" {
+                    { $script:Result = Get-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                    $script:Result.Name | Should BeExactly $projectName
+                }
+
+                It "Should delete the new project '$projectName'" {
+                    { Remove-VSTSProject @parameterDetails -Verbose } | Should Not Throw
+                }
+            }
+
+        }
+    }
+
+    Context 'Process' {
+        Context 'Using session object' {
+            $parameterDetails = @{
+                Session = $Script:Session
+                Verbose = $True
+            }
+
+            It 'Should returns default process templates' {
+                { $script:Result = Get-VstsProcess @parameterDetails } | Should Not Throw
+                $script:Result | Where-Object -Property Name -EQ 'Agile' | Should Not BeNullOrEmpty
+                $script:Result | Where-Object -Property Name -EQ 'CMMI' | Should Not BeNullOrEmpty
+                $script:Result | Where-Object -Property Name -EQ 'Scrum' | Should Not BeNullOrEmpty
+            }
+        }
+
+        Context 'Using account details' {
+            $parameterDetails = @{
+                AccountName = $account
+                User        = $userName
+                Token       = $Token
+                Verbose     = $True
+            }
+
+            It 'Should returns default process templates' {
+                { $script:Result = Get-VstsProcess @parameterDetails } | Should Not Throw
+                $script:Result | Where-Object -Property Name -EQ 'Agile' | Should Not BeNullOrEmpty
+                $script:Result | Where-Object -Property Name -EQ 'CMMI' | Should Not BeNullOrEmpty
+                $script:Result | Where-Object -Property Name -EQ 'Scrum' | Should Not BeNullOrEmpty
+            }
+        }
+
+    }
 }

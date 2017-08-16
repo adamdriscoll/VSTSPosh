@@ -27,23 +27,34 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="CreateModuleManifest.ps1" />
-    <Compile Include="InvokeTests.ps1" />
+    <Compile Include="CHANGELOG.md" />
+    <Compile Include="ci\CodeCovIo.psd1" />
+    <Compile Include="ci\CodeCovIo.psm1" />
+    <Compile Include="ci\Invoke-Tests.ps1" />
+    <Compile Include="lib\Builds.ps1" />
+    <Compile Include="lib\Code.ps1" />
+    <Compile Include="lib\Projects.ps1" />
+    <Compile Include="lib\Releases.ps1" />
+    <Compile Include="lib\Workitems.ps1" />
     <Compile Include="LICENSE" />
-    <Compile Include="PublishModule.ps1" />
-    <Compile Include="Tests\Builds.tests.ps1" />
-    <Compile Include="Tests\Code.tests.ps1" />
-    <Compile Include="Tests\Projects.tests.ps1" />
-    <Compile Include="Tests\WorkItems.tests.ps1" />
-    <Compile Include="Tests\Unit.tests.ps1" />
+    <Compile Include="ci\New-ModuleManifest.ps1" />
+    <Compile Include="ci\Publish-Module.ps1" />
+    <Compile Include="tests\Builds.tests.ps1" />
+    <Compile Include="tests\Code.tests.ps1" />
+    <Compile Include="tests\Projects.tests.ps1" />
+    <Compile Include="tests\WorkItems.tests.ps1" />
+    <Compile Include="tests\Unit.tests.ps1" />
     <Compile Include="README.md" />
     <Compile Include="VSTS.psm1" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".codecov.yml" />
     <Content Include="appveyor.yml" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Tests\" />
+    <Folder Include="lib\" />
+    <Folder Include="ci\" />
+    <Folder Include="tests\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="Build" />
