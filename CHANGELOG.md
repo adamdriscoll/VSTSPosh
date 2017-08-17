@@ -143,6 +143,7 @@
   - Style consistency cleanup.
   - Added CmdletBinding and other PowerShell best practice changes.
   - Unit tests completed.
+- Added all cmdlets to manifest creation script.
 
 ## 1.0.0.0
 
