@@ -6,8 +6,8 @@
 
 Branch | Build Status | Code Coverage | Protected
 --- | --- | --- | ---
-master | [![Master](https://ci.appveyor.com/api/projects/status/2fc84qwbsidtgvfq/branch/master?svg=true)](https://ci.appveyor.com/project/adamdriscoll/vstsposh/branch/master) | [![codecov](https://codecov.io/gh/PlagueHO/VSTSPosh/branch/master/graph/badge.svg)](https://codecov.io/gh/PlagueHO/VSTSPosh/branch/master) | Yes
-dev | [![Development](https://ci.appveyor.com/api/projects/status/2fc84qwbsidtgvfq/branch/develop?svg=true)](https://ci.appveyor.com/project/adamdriscoll/vstsposh/branch/develop) | [![codecov](https://codecov.io/gh/PlagueHO/VSTSPosh/branch/dev/graph/badge.svg)](https://codecov.io/gh/PlagueHO/VSTSPosh/branch/dev) | No
+master | [![Master](https://ci.appveyor.com/api/projects/status/2fc84qwbsidtgvfq/branch/master?svg=true)](https://ci.appveyor.com/project/adamdriscoll/vstsposh/branch/master) | [![codecov](https://codecov.io/gh/adamdriscoll/VSTSPosh/branch/master/graph/badge.svg)](https://codecov.io/gh/adamdriscoll/VSTSPosh/branch/master) | Yes
+develop | [![Development](https://ci.appveyor.com/api/projects/status/2fc84qwbsidtgvfq/branch/develop?svg=true)](https://ci.appveyor.com/project/adamdriscoll/vstsposh/branch/develop) | [![codecov](https://codecov.io/gh/adamdriscoll/VSTSPosh/branch/develop/graph/badge.svg)](https://codecov.io/gh/adamdriscoll/VSTSPosh/branch/develop) | No
 
 ## Cmdlets
 
