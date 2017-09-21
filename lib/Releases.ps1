@@ -332,7 +332,10 @@ function New-VstsReleaseDefinition
         [String] $Name,
 
         [Parameter(Mandatory = $false)]
-        [string[]]$EnvironmentNames = @('Staging')
+        [string[]]$EnvironmentNames = @('Staging'),
+
+        [Parameter(Mandatory = $false)]
+        [string]$ReleaseNameFormat
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'Account')
@@ -373,7 +376,7 @@ function New-VstsReleaseDefinition
                         }
                         skipArtifactsDownload = $false
                         timeoutInMinutes      = 0
-                        queueId               = 2
+                        queueId               = 45
                         demands               = @()
                         enableAccessToken     = $false
                     }
@@ -424,7 +427,7 @@ function New-VstsReleaseDefinition
         environments =  $environments
         artifacts =  @()
         triggers =  @()
-        releaseNameFormat = $null
+        releaseNameFormat = $ReleaseNameFormat
         _links =  ""
         tags =  @()
         properties =  ""
@@ -434,7 +437,7 @@ function New-VstsReleaseDefinition
         -Session $Session `
         -Project $Project `
         -Path 'Release/definitions' `
-        -ApiVersion '3.0-preview.2' `
+        -ApiVersion '4.0-preview.3' `
         -EndpointName 'vsrm' `
         -Method POST `
         -Body $Body
