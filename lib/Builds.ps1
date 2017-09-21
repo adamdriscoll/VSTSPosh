@@ -225,7 +225,13 @@ function New-VstsBuildDefinition
         $Queue,
 
         [Parameter(Mandatory = $true)]
-        [PSCustomObject] $Repository
+        [PSCustomObject] $Repository,
+
+        [Parameter(Mandatory = $false)]
+        [string]$BuildNumberFormat,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$BadgeEnabled
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'Account')
@@ -333,6 +339,8 @@ function New-VstsBuildDefinition
                 allowOverride = $true
             }
         }
+        badgeEnabled = [bool]$BadgeEnabled
+        buildNumberFormat = $BuildNumberFormat
         triggers  = @()
         comment   = $Comment
     } | ConvertTo-Json -Depth 20
