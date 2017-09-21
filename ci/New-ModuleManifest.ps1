@@ -21,6 +21,7 @@ $FunctionsToExport = @(
     'Get-VstsBuildDefinition',
     'Get-VstsBuildQueue',
     'Get-VstsBuildTag',
+    'New-VstsReleaseDefinition',
     'Get-VstsRelease',
     'Get-VstsReleaseDefinition'
 )
