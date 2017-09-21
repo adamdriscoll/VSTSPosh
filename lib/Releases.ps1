@@ -281,3 +281,164 @@ function New-VstsRelease
         -Method POST `
         -Body $Body
 }
+
+
+<#
+    .SYNOPSIS
+    Creates a team project release definition.
+
+    .PARAMETER AccountName
+    The name of the VSTS account to use.
+
+    .PARAMETER User
+    This user name to authenticate to VSTS.
+
+    .PARAMETER Token
+    This personal access token to use to authenticate to VSTS.
+
+    .PARAMETER Session
+    The session object created by New-VstsSession.
+
+    .PARAMETER Project
+    The name of the project in which to create the release.
+
+    .PARAMETER Name
+    The name of release definition to create.
+
+    .PARAMETER EnvironmentNames
+    A list of Environments to create. Will be created with identical defaults.
+#>
+function New-VstsReleaseDefinition
+{
+    [CmdletBinding(DefaultParameterSetName = 'Account')]
+    param
+    (
+        [Parameter(Mandatory = $True, ParameterSetName = 'Account')]
+        [String] $AccountName,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+        [String] $User,
+
+        [Parameter(Mandatory = $true, ParameterSetName = 'Account')]
+        [String] $Token,
+
+        [Parameter(Mandatory = $True, ParameterSetName = 'Session')]
+        $Session,
+
+        [Parameter(Mandatory = $True)]
+        [String] $Project,
+
+        [Parameter(Mandatory = $true)]
+        [String] $Name,
+
+        [Parameter(Mandatory = $false)]
+        [string[]]$EnvironmentNames = @('Staging')
+    )
+
+    if ($PSCmdlet.ParameterSetName -eq 'Account')
+    {
+        $Session = New-VstsSession -AccountName $AccountName -User $User -Token $Token
+    }
+
+    [psobject[]]$environments  = for($i = 0; $i -lt $environmentNames.Count; $i++){
+        $environmentDefinition =  @{
+            id                  = $i
+            name                = $EnvironmentNames[$i]
+            variables           = ""
+            preDeployApprovals  = @{
+                approvals = @(
+                    @{
+                        rank             = 1
+                        isAutomated      = $true
+                        isNotificationOn = $false
+                        id               = 0
+                    }
+                )
+            }
+            postDeployApprovals = @{
+                approvals = @(
+                    @{
+                        rank             = 1
+                        isAutomated      = $true
+                        isNotificationOn = $false
+                        id               = 0
+                    }
+                )
+            }
+            deployPhases        = @(
+                @{
+                    deploymentInput = @{
+                        parallelExecution     = @{
+                            parallelExecutionType = "none"
+                        }
+                        skipArtifactsDownload = $false
+                        timeoutInMinutes      = 0
+                        queueId               = 2
+                        demands               = @()
+                        enableAccessToken     = $false
+                    }
+                    rank            = 1
+                    phaseType       = "agentBasedDeployment"
+                    name            = "Run on agent"
+                    workflowTasks   = @()
+                }
+            )
+            environmentOptions  = @{
+                emailNotificationType   = "OnlyOnFailure"
+                emailRecipients         = "release.environment.owner;release.creator"
+                skipArtifactsDownload   = $false
+                timeoutInMinutes        = 0
+                enableAccessToken       = $false
+                publishDeploymentStatus = $false
+            }
+            demands             = @()
+            conditions          = @()
+            executionPolicy     = @{
+                concurrencyCount = 0
+                queueDepthCount  = 0
+            }
+            schedules           = @()
+            retentionPolicy     = @{
+                daysToKeep     = 30
+                releasesToKeep = 3
+                retainBuild    = $true
+            }
+        }
+        Write-Output $environmentDefinition
+    }
+
+
+    $body = @{
+        source = "undefined"
+        id = 0
+        revision = 1
+        name =  $name
+        createdBy =  $null
+        createdOn =  "0001-01-01T00:00:00"
+        modifiedBy =  $null
+        modifiedOn =  "0001-01-01T00:00:00"
+        lastRelease =  $null
+        path =  $null
+        variables =  ""
+        variableGroups =  @()
+        environments =  $environments
+        artifacts =  @()
+        triggers =  @()
+        releaseNameFormat = $null
+        _links =  ""
+        tags =  @()
+        properties =  ""
+    } | ConvertTo-Json -Depth 20 -Verbose
+
+    $result = Invoke-VstsEndpoint `
+        -Session $Session `
+        -Project $Project `
+        -Path 'Release/definitions' `
+        -ApiVersion '3.0-preview.2' `
+        -EndpointName 'vsrm' `
+        -Method POST `
+        -Body $Body
+
+
+    Write-Output $result.Value
+}
