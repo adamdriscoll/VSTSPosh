@@ -262,39 +262,39 @@ function New-VstsBuildDefinition
                     versionSpec = "*"
                 }
                 inputs          = @{
-                    "solution"              = "**\\*.sln"
-                    "msbuildArgs"           = ""
-                    "platform"              = '$(platform)'
-                    "configuration"         = '$(config)'
-                    "clean"                 = "false"
-                    "restoreNugetPackages"  = "true"
-                    "vsLocationMethod"      = "version"
-                    "vsVersion"             = "latest"
-                    "vsLocation"            = ""
-                    "msbuildLocationMethod" = "version"
-                    "msbuildVersion"        = "latest"
-                    "msbuildArchitecture"   = "x86"
-                    "msbuildLocation"       = ""
-                    "logProjectEvents"      = "true"
+                    solution              = "**\\*.sln"
+                    msbuildArgs           = ""
+                    platform              = '$(platform)'
+                    configuration         = '$(config)'
+                    clean                 = "false"
+                    restoreNugetPackages  = "true"
+                    vsLocationMethod      = "version"
+                    vsVersion             = "latest"
+                    vsLocation            = ""
+                    msbuildLocationMethod = "version"
+                    msbuildVersion        = "latest"
+                    msbuildArchitecture   = "x86"
+                    msbuildLocation       = ""
+                    logProjectEvents      = "true"
                 }
             },
             @{
-                "enabled"         = $true
-                "continueOnError" = $false
-                "alwaysRun"       = $false
-                "displayName"     = "Test Assemblies **\\*test*.dll;-:**\\obj\\**"
-                "task"            = @{
-                    "id"          = "ef087383-ee5e-42c7-9a53-ab56c98420f9"
-                    "versionSpec" = "*"
+                enabled         = $true
+                continueOnError = $false
+                alwaysRun       = $false
+                displayName     = "Test Assemblies **\\*test*.dll;-:**\\obj\\**"
+                task            = @{
+                    id          = "ef087383-ee5e-42c7-9a53-ab56c98420f9"
+                    versionSpec = "*"
                 }
-                "inputs"          = @{
-                    "testAssembly"             = "**\\*test*.dll;-:**\\obj\\**"
-                    "testFiltercriteria"       = ""
-                    "runSettingsFile"          = ""
-                    "codeCoverageEnabled"      = "true"
-                    "otherConsoleOptions"      = ""
-                    "vsTestVersion"            = "14.0"
-                    "pathtoCustomTestAdapters" = ""
+                inputs          = @{
+                    testAssembly             = "**\\*test*.dll;-:**\\obj\\**"
+                    testFiltercriteria       = ""
+                    runSettingsFile          = ""
+                    codeCoverageEnabled      = "true"
+                    otherConsoleOptions      = ""
+                    vsTestVersion            = "14.0"
+                    pathtoCustomTestAdapters = ""
                 }
             }
         )
