@@ -225,7 +225,13 @@ function New-VstsBuildDefinition
         $Queue,
 
         [Parameter(Mandatory = $true)]
-        [PSCustomObject] $Repository
+        [PSCustomObject] $Repository,
+
+        [Parameter(Mandatory = $false)]
+        [string]$BuildNumberFormat,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$BadgeEnabled
     )
 
     if ($PSCmdlet.ParameterSetName -eq 'Account')
@@ -262,79 +268,81 @@ function New-VstsBuildDefinition
                     versionSpec = "*"
                 }
                 inputs          = @{
-                    "solution"              = "**\\*.sln"
-                    "msbuildArgs"           = ""
-                    "platform"              = '$(platform)'
-                    "configuration"         = '$(config)'
-                    "clean"                 = "false"
-                    "restoreNugetPackages"  = "true"
-                    "vsLocationMethod"      = "version"
-                    "vsVersion"             = "latest"
-                    "vsLocation"            = ""
-                    "msbuildLocationMethod" = "version"
-                    "msbuildVersion"        = "latest"
-                    "msbuildArchitecture"   = "x86"
-                    "msbuildLocation"       = ""
-                    "logProjectEvents"      = "true"
+                    solution              = "**\\*.sln"
+                    msbuildArgs           = ""
+                    platform              = '$(platform)'
+                    configuration         = '$(config)'
+                    clean                 = "false"
+                    restoreNugetPackages  = "true"
+                    vsLocationMethod      = "version"
+                    vsVersion             = "latest"
+                    vsLocation            = ""
+                    msbuildLocationMethod = "version"
+                    msbuildVersion        = "latest"
+                    msbuildArchitecture   = "x86"
+                    msbuildLocation       = ""
+                    logProjectEvents      = "true"
                 }
             },
             @{
-                "enabled"         = $true
-                "continueOnError" = $false
-                "alwaysRun"       = $false
-                "displayName"     = "Test Assemblies **\\*test*.dll;-:**\\obj\\**"
-                "task"            = @{
-                    "id"          = "ef087383-ee5e-42c7-9a53-ab56c98420f9"
-                    "versionSpec" = "*"
+                enabled         = $true
+                continueOnError = $false
+                alwaysRun       = $false
+                displayName     = "Test Assemblies **\\*test*.dll;-:**\\obj\\**"
+                task            = @{
+                    id          = "ef087383-ee5e-42c7-9a53-ab56c98420f9"
+                    versionSpec = "*"
                 }
-                "inputs"          = @{
-                    "testAssembly"             = "**\\*test*.dll;-:**\\obj\\**"
-                    "testFiltercriteria"       = ""
-                    "runSettingsFile"          = ""
-                    "codeCoverageEnabled"      = "true"
-                    "otherConsoleOptions"      = ""
-                    "vsTestVersion"            = "14.0"
-                    "pathtoCustomTestAdapters" = ""
+                inputs          = @{
+                    testAssembly             = "**\\*test*.dll;-:**\\obj\\**"
+                    testFiltercriteria       = ""
+                    runSettingsFile          = ""
+                    codeCoverageEnabled      = "true"
+                    otherConsoleOptions      = ""
+                    vsTestVersion            = "14.0"
+                    pathtoCustomTestAdapters = ""
                 }
             }
         )
-        "repository" = @{
-            "id"            = $Repository.Id
-            "type"          = "tfsgit"
-            "name"          = $Repository.Name
-            "localPath"     = "`$(sys.sourceFolder)/$($Repository.Name)"
-            "defaultBranch" = "refs/heads/master"
-            "url"           = $Repository.Url
-            "clean"         = "false"
+        repository = @{
+            id            = $Repository.Id
+            type          = "tfsgit"
+            name          = $Repository.Name
+            localPath     = "`$(sys.sourceFolder)/$($Repository.Name)"
+            defaultBranch = "refs/heads/master"
+            url           = $Repository.Url
+            clean         = "false"
         }
-        "options"    = @(
+        options    = @(
             @{
-                "enabled"    = $true
-                "definition" = @{
-                    "id" = "7c555368-ca64-4199-add6-9ebaf0b0137d"
+                enabled    = $true
+                definition = @{
+                    id = "7c555368-ca64-4199-add6-9ebaf0b0137d"
                 }
-                "inputs"     = @{
-                    "parallel"    = "false"
-                    "multipliers" = @("config", "platform")
+                inputs     = @{
+                    parallel    = "false"
+                    multipliers = '["config", "platform"]'
                 }
             }
         )
-        "variables"  = @{
-            "forceClean" = @{
-                "value"         = "false"
-                "allowOverride" = $true
+        variables  = @{
+            forceClean = @{
+                value         = "false"
+                allowOverride = $true
             }
-            "config"     = @{
-                "value"         = "debug, release"
-                "allowOverride" = $true
+            config     = @{
+                value         = "debug, release"
+                allowOverride = $true
             }
-            "platform"   = @{
-                "value"         = "any cpu"
-                "allowOverride" = $true
+            platform   = @{
+                value         = "any cpu"
+                allowOverride = $true
             }
         }
-        "triggers"   = @()
-        "comment"    = $Comment
+        badgeEnabled = [bool]$BadgeEnabled
+        buildNumberFormat = $BuildNumberFormat
+        triggers  = @()
+        comment   = $Comment
     } | ConvertTo-Json -Depth 20
 
     $result = Invoke-VstsEndpoint `
